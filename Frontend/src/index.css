@@ -1,0 +1,14 @@
+/* Frontend/src/index.css */
+@import "tailwindcss";
+
+/* Custom styles */
+body {
+  font-family: 'Inter', sans-serif;
+  margin: 0;
+  padding: 0;
+}
+
+/* Optional: Add custom gradients */
+.bg-gradient-interview {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
