@@ -261,7 +261,7 @@ const Interview = () => {
   const maxRestartAttempts = 3;
   const finalTranscriptAccumulator = useRef(''); // FIXED: Changed to ref so it persists but can be reset
 
-  const GEMINI_API_KEY = 'AIzaSyA6EvtESJ7dJoM1k0UtfK17WXn9MutyZ-M';
+  const GEMINI_API_KEY = 'AIzaSyAROwOdL1mFBZTqOb81hl6prgv3Jqpvgzk';
   const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent';
 
   // Check if site is served over HTTPS

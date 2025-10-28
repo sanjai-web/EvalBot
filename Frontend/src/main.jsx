@@ -9,11 +9,16 @@ import Home from "./Pages/home";
 import Login from "./Pages/login";
 import Signup from "./Pages/signup";
 import Profile from "./Pages/profile";
-import Interview from "./Pages/interview";
 import Result from "./Pages/result";
 import Details from "./Pages/details";
 import GetStart from "./Pages/getstart";
 import NotFound from "./Pages/notfound";
+
+
+//Domains
+import Interview from "./Domains/interview";
+import Rolebased from "./Domains/rolebased";
+
 function Layout() {
   const location = useLocation();
 
@@ -36,10 +41,15 @@ function Layout() {
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />}  />
           <Route path="/profile" element={<Profile />} />
-          <Route path="/interview" element={<Interview />} />
+          
           <Route path="/result" element={<Result />} />
           <Route path="/details" element={<Details />} />
            <Route path="*" element={<NotFound />} />
+          {/* Domains */}
+          <Route path="/interview" element={<Interview />} />
+          <Route path="/rolebased" element={<Rolebased />} />
+
+
         </Routes>
       </div>
     </>
