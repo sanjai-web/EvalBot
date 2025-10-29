@@ -80,7 +80,7 @@ function CollectionCard({ collection, onView, onDelete }) {
 
         <button
           onClick={() => onView(collection)}
-          className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white py-2.5 rounded-lg font-medium flex items-center justify-center space-x-2 transition-all duration-200"
+          className="w-full bg-linear-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white py-2.5 rounded-lg font-medium flex items-center justify-center space-x-2 transition-all duration-200"
         >
           <span>View Details</span>
           <ChevronRight className="w-4 h-4" />

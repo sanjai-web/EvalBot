@@ -15,7 +15,7 @@ function StatCard({ title, value, icon: Icon, color }) {
           <p className="text-slate-600 text-sm mb-1">{title}</p>
           <p className="text-3xl font-bold text-slate-900">{value}</p>
         </div>
-        <div className={`bg-gradient-to-br ${colorClasses[color]} p-3 rounded-lg`}>
+        <div className={`bg-linear-to-br ${colorClasses[color]} p-3 rounded-lg`}>
           <Icon className="w-6 h-6 text-white" />
         </div>
       </div>

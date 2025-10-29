@@ -61,7 +61,7 @@ function AdminDetails() {
         {/* Collection Details Card */}
         <div className="bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden">
           {/* Header Section */}
-          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border-b border-slate-200 p-6">
+          <div className="bg-linear-to-r from-blue-50 to-indigo-50 border-b border-slate-200 p-6">
             <div className="flex items-start justify-between">
               <div>
                 <h1 className="text-2xl font-bold text-slate-900 mb-1">{collection.company}</h1>
@@ -113,7 +113,7 @@ function AdminDetails() {
 
         {/* Student Details Table */}
         <div className="bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden">
-          <div className="p-4 border-b border-slate-200 bg-gradient-to-r from-slate-50 to-slate-100">
+          <div className="p-4 border-b border-slate-200 bg-linear-to-r from-slate-50 to-slate-100">
             <h2 className="text-lg font-semibold text-slate-900 flex items-center space-x-2">
               <User className="w-5 h-5 text-blue-600" />
               <span>Applicant Details</span>
@@ -123,7 +123,7 @@ function AdminDetails() {
 
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead className="bg-gradient-to-r from-blue-50 to-indigo-50 border-b border-blue-200">
+              <thead className="bg-linear-to-r from-blue-50 to-indigo-50 border-b border-blue-200">
                 <tr>
                   <th className="px-4 py-3 text-left text-xs font-semibold text-blue-900 uppercase tracking-wider">Name</th>
                   <th className="px-4 py-3 text-left text-xs font-semibold text-blue-900 uppercase tracking-wider">Email</th>
@@ -137,7 +137,7 @@ function AdminDetails() {
                   <tr key={student.id} className="hover:bg-blue-50 transition-colors group">
                     <td className="px-4 py-3">
                       <div className="flex items-center space-x-3">
-                        <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center shadow-sm">
+                        <div className="w-8 h-8 bg-linear-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center shadow-sm">
                           <User className="w-4 h-4 text-white" />
                         </div>
                         <span className="font-medium text-slate-900 text-sm group-hover:text-blue-900">{student.name}</span>
