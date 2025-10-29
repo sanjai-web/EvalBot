@@ -27,7 +27,7 @@ function Layout() {
   const isAuthPage = authRoutes.includes(location.pathname);
 
   // Hide navbar for interview page
-  const hideNavbarRoutes = ["/interview"];
+  const hideNavbarRoutes = ["/interview","/rolebased"];
   const shouldHideNavbar = hideNavbarRoutes.includes(location.pathname);
 
   return (
@@ -41,7 +41,6 @@ function Layout() {
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />}  />
           <Route path="/profile" element={<Profile />} />
-          
           <Route path="/result" element={<Result />} />
           <Route path="/details" element={<Details />} />
            <Route path="*" element={<NotFound />} />
