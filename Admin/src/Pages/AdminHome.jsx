@@ -2,8 +2,29 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   Plus, Briefcase, Calendar, Building2, FileText, Search, Filter, MoreVertical, 
-  Eye, Trash2, ChevronRight, X, Upload, Building2 as BuildingIcon 
+  Eye, Trash2, ChevronRight, X, Upload, Building2 as BuildingIcon, Hash, Clock
 } from 'lucide-react';
+
+// Function to generate alphanumeric interview ID
+function generateInterviewId() {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  let result = '';
+  for (let i = 0; i < 8; i++) {
+    result += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return result;
+}
+
+// Function to format date with time
+function formatDateTime(date = new Date()) {
+  const day = String(date.getDate()).padStart(2, '0');
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const year = date.getFullYear();
+  const hours = String(date.getHours()).padStart(2, '0');
+  const minutes = String(date.getMinutes()).padStart(2, '0');
+  
+  return `${day}-${month}-${year} ${hours}:${minutes}`;
+}
 
 // StatCard Component
 function StatCard({ title, value, icon: Icon, color }) {
@@ -20,7 +41,6 @@ function StatCard({ title, value, icon: Icon, color }) {
     indigo: 'bg-indigo-600 text-white',
     slate: 'bg-slate-600 text-white'
   };
-
 
   return (
     <div className={`rounded-lg border p-6 hover:shadow-sm transition-shadow ${colorClasses[color]}`}>
@@ -94,6 +114,14 @@ function CollectionCard({ collection, onView, onDelete }) {
           </div>
         </div>
 
+        {/* Interview ID Display */}
+        <div className="flex items-center space-x-2 mb-3">
+          <Hash className="w-4 h-4 text-slate-500" />
+          <span className="text-sm font-mono bg-slate-100 px-2 py-1 rounded border border-slate-200">
+            {collection.interviewId}
+          </span>
+        </div>
+
         <p className="text-slate-600 text-sm mb-4 line-clamp-2">{collection.description}</p>
 
         <div className="flex items-center justify-between mb-4">
@@ -112,7 +140,11 @@ function CollectionCard({ collection, onView, onDelete }) {
         <div className="flex items-center justify-between text-sm text-slate-600 mb-4">
           <div className="flex items-center space-x-2">
             <Calendar className="w-4 h-4" />
-            <span>{collection.date}</span>
+            <span>{collection.date.split(' ')[0]}</span>
+          </div>
+          <div className="flex items-center space-x-2">
+            <Clock className="w-4 h-4" />
+            <span>{collection.date.split(' ')[1]}</span>
           </div>
           <div className="flex items-center space-x-2">
             <FileText className="w-4 h-4" />
@@ -139,7 +171,9 @@ function CreateCollectionPopup({ onClose, onCreate }) {
     role: '',
     description: '',
     domain: 'Computer Science',
-    fileName: ''
+    fileName: '',
+    interviewId: generateInterviewId(),
+    date: formatDateTime()
   });
 
   const handleSubmit = () => {
@@ -153,6 +187,25 @@ function CreateCollectionPopup({ onClose, onCreate }) {
     if (file) {
       setFormData({ ...formData, fileName: file.name });
     }
+  };
+
+  const regenerateInterviewId = () => {
+    setFormData({ ...formData, interviewId: generateInterviewId() });
+  };
+
+  const handleDateTimeChange = (e) => {
+    const selectedDateTime = new Date(e.target.value);
+    setFormData({ ...formData, date: formatDateTime(selectedDateTime) });
+  };
+
+  // Convert current formData.date to ISO string for datetime-local input
+  const getDateTimeLocalValue = () => {
+    const [datePart, timePart] = formData.date.split(' ');
+    const [day, month, year] = datePart.split('-');
+    const [hours, minutes] = timePart.split(':');
+    
+    // Format: YYYY-MM-DDTHH:MM
+    return `${year}-${month}-${day}T${hours}:${minutes}`;
   };
 
   return (
@@ -169,6 +222,36 @@ function CreateCollectionPopup({ onClose, onCreate }) {
         </div>
 
         <div className="p-6 space-y-6">
+          {/* Interview ID Field */}
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-2">
+              Interview ID *
+            </label>
+            <div className="flex space-x-2">
+              <div className="relative flex-1">
+                <Hash className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-5 h-5" />
+                <input
+                  type="text"
+                  value={formData.interviewId}
+                  onChange={(e) => setFormData({ ...formData, interviewId: e.target.value.toUpperCase() })}
+                  className="w-full pl-10 pr-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 font-mono"
+                  placeholder="Enter interview ID"
+                  maxLength={8}
+                />
+              </div>
+              <button
+                type="button"
+                onClick={regenerateInterviewId}
+                className="px-4 py-3 border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors text-sm font-medium"
+              >
+                Regenerate
+              </button>
+            </div>
+            <p className="text-xs text-slate-500 mt-1">
+              Unique identifier for this interview collection (8 characters max)
+            </p>
+          </div>
+
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-2">
               Company Name *
@@ -193,6 +276,25 @@ function CreateCollectionPopup({ onClose, onCreate }) {
               className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               placeholder="Enter role title"
             />
+          </div>
+
+          {/* Date and Time Field */}
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-2">
+              Date & Time *
+            </label>
+            <div className="relative">
+              <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-5 h-5" />
+              <input
+                type="datetime-local"
+                value={getDateTimeLocalValue()}
+                onChange={handleDateTimeChange}
+                className="w-full pl-10 pr-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              />
+            </div>
+            <p className="text-xs text-slate-500 mt-1">
+              Selected: {formData.date}
+            </p>
           </div>
 
           <div>
@@ -253,7 +355,8 @@ function CreateCollectionPopup({ onClose, onCreate }) {
             </button>
             <button
               onClick={handleSubmit}
-              className="flex-1 px-6 py-3 bg-linear-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-lg font-medium transition-all duration-200 shadow-lg shadow-blue-500/30"
+              disabled={!formData.interviewId || !formData.company || !formData.role || !formData.description}
+              className="flex-1 px-6 py-3 bg-linear-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 disabled:from-slate-400 disabled:to-slate-500 disabled:cursor-not-allowed text-white rounded-lg font-medium transition-all duration-200 shadow-lg shadow-blue-500/30"
             >
               Create Collection
             </button>
@@ -273,34 +376,37 @@ function AdminHome() {
       id: 1,
       company: 'Google',
       role: 'Software Developer',
-      date: '25-09-2025',
+      date: '25-09-2025 14:30',
       description: 'Full-stack development position focusing on cloud services',
       domain: 'Computer Science',
       fileName: 'candidates.xlsx',
       status: 'Active',
-      applicants: 45
+      applicants: 45,
+      interviewId: 'GOOG1234'
     },
     {
       id: 2,
       company: 'Microsoft',
       role: 'Product Manager',
-      date: '20-09-2025',
+      date: '20-09-2025 10:15',
       description: 'Lead product strategy for Azure services',
       domain: 'Role Based',
       fileName: 'applications.xlsx',
       status: 'Active',
-      applicants: 32
+      applicants: 32,
+      interviewId: 'MSFT5678'
     },
     {
       id: 3,
       company: 'Amazon',
       role: 'Data Scientist',
-      date: '18-09-2025',
+      date: '18-09-2025 16:45',
       description: 'ML/AI research and implementation',
       domain: 'Computer Science',
       fileName: 'data_candidates.xlsx',
       status: 'Closed',
-      applicants: 67
+      applicants: 67,
+      interviewId: 'AMZN9012'
     }
   ]);
   const [searchTerm, setSearchTerm] = useState('');
@@ -310,7 +416,6 @@ function AdminHome() {
     const collection = {
       ...newCollection,
       id: collections.length + 1,
-      date: new Date().toLocaleDateString('en-GB').split('/').join('-'),
       status: 'Active',
       applicants: 0
     };
@@ -328,7 +433,8 @@ function AdminHome() {
 
   const filteredCollections = collections.filter(collection => {
     const matchesSearch = collection.company.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         collection.role.toLowerCase().includes(searchTerm.toLowerCase());
+                         collection.role.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         collection.interviewId.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesDomain = filterDomain === 'all' || collection.domain === filterDomain;
     return matchesSearch && matchesDomain;
   });
@@ -376,7 +482,7 @@ function AdminHome() {
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-5 h-5" />
               <input
                 type="text"
-                placeholder="Search by company or role..."
+                placeholder="Search by company, role, or interview ID..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full pl-10 pr-4 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
