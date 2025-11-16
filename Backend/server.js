@@ -1,715 +1,552 @@
-const express = require("express");
-const cors = require("cors");
-const mongoose = require("mongoose");
-const bcrypt = require("bcryptjs");
-const jwt = require("jsonwebtoken");
-const multer = require("multer");
-const fs = require("fs");
-const path = require("path");
-const pdf = require('pdf-parse/lib/pdf-parse.js');
-require("dotenv").config();
+require('dotenv').config();
+const express = require('express');
+const mongoose = require('mongoose');
+const cors = require('cors');
+const bodyParser = require('body-parser');
 
 const app = express();
+const PORT = process.env.PORT || 5000;
 
 // Middleware
 app.use(cors());
-app.use(express.json());
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: true }));
 
 // MongoDB Connection
-const MONGO_URI = process.env.MONGO_URI;
+const MONGO_URI = process.env.MONGO_URI ;
 
 mongoose.connect(MONGO_URI, {
   useNewUrlParser: true,
   useUnifiedTopology: true,
 })
-.then(() => console.log("MongoDB connected successfully"))
-.catch((err) => console.log("MongoDB connection error:", err));
+.then(() => console.log('✅ MongoDB Connected Successfully'))
+.catch(err => console.error('❌ MongoDB Connection Error:', err));
 
-// User Schema
+// User Schema (for applicants under each interview)
 const userSchema = new mongoose.Schema({
   name: {
     type: String,
     required: true,
     trim: true
   },
-  email: {
+  loginId: {
     type: String,
     required: true,
-    unique: true,
     lowercase: true,
     trim: true
   },
   password: {
     type: String,
-    required: true,
-    minlength: 6
-  },
-  profession: {
-    type: String,
-    required: true,
-    enum: ['student', 'professional']
-  }
-}, {
-  timestamps: true
-});
-
-// Hash password before saving
-userSchema.pre('save', async function(next) {
-  if (!this.isModified('password')) return next();
-  
-  try {
-    const salt = await bcrypt.genSalt(10);
-    this.password = await bcrypt.hash(this.password, salt);
-    next();
-  } catch (error) {
-    next(error);
-  }
-});
-
-// Compare password method
-userSchema.methods.comparePassword = async function(candidatePassword) {
-  return await bcrypt.compare(candidatePassword, this.password);
-};
-
-const User = mongoose.model('User', userSchema);
-
-// Interview Results Schema
-const interviewResultSchema = new mongoose.Schema({
-  userId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
     required: true
   },
-  date: {
+  score: {
+    type: Number,
+    default: 0,
+    min: 0,
+    max: 100
+  },
+  status: {
+    type: String,
+    enum: ['Active', 'Blocked'],
+    default: 'Active'
+  },
+  interviewId: {
+    type: String,
+    required: true,
+    index: true
+  },
+  createdAt: {
+    type: Date,
+    default: Date.now
+  }
+});
+
+// Collection Schema (Interview Details)
+const collectionSchema = new mongoose.Schema({
+  interviewId: {
+    type: String,
+    required: true,
+    unique: true,
+    uppercase: true,
+    trim: true,
+    maxlength: 8
+  },
+  company: {
+    type: String,
+    required: true,
+    trim: true
+  },
+  role: {
+    type: String,
+    required: true,
+    trim: true
+  },
+  description: {
+    type: String,
+    required: true
+  },
+  domain: {
+    type: String,
+    enum: ['Computer Science', 'Role Based'],
+    required: true
+  },
+  level: {
+    type: String,
+    enum: ['Beginner', 'Intermediate', 'Advanced'],
+    required: true
+  },
+  startDateTime: {
+    type: String,
+    required: true
+  },
+  endDateTime: {
+    type: String,
+    required: true
+  },
+  fileName: {
+    type: String,
+    default: ''
+  },
+  status: {
+    type: String,
+    enum: ['Active', 'Closed'],
+    default: 'Active'
+  },
+  applicants: {
+    type: Number,
+    default: 0
+  },
+  createdAt: {
     type: Date,
     default: Date.now
   },
-  jobRole: {
-    type: String,
-    required: true
-  },
-  companyName: {
-    type: String,
-    required: true
-  },
-  overallScore: {
-    type: Number,
-    required: true
-  },
-  performanceLevel: {
-    type: String,
-    required: true
-  },
-  conversationHistory: [{
-    question: String,
-    answer: String,
-    category: String,
-    score: Number,
-    isCandidateQuestion: Boolean
-  }],
-  knowledgeScores: {
-    projects: Number,
-    internships: Number,
-    problemSolving: Number,
-    personality: Number
-  },
-  timer: Number,
-  totalQuestions: Number,
-  answeredQuestions: Number,
-  difficultyLevel: String
-}, {
-  timestamps: true
-});
-
-const InterviewResult = mongoose.model('InterviewResult', interviewResultSchema);
-
-// JWT Secret
-const JWT_SECRET = process.env.JWT_SECRET || 'your_fallback_jwt_secret_here';
-
-// Configure multer for file uploads
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    const uploadDir = 'uploads/';
-    if (!fs.existsSync(uploadDir)) {
-      fs.mkdirSync(uploadDir);
-    }
-    cb(null, uploadDir);
-  },
-  filename: (req, file, cb) => {
-    cb(null, Date.now() + '-' + file.originalname);
+  updatedAt: {
+    type: Date,
+    default: Date.now
   }
 });
 
-const upload = multer({
-  storage: storage,
-  limits: {
-    fileSize: 5 * 1024 * 1024 // 5MB limit
-  },
-  fileFilter: (req, file, cb) => {
-    const allowedTypes = [
-      'application/pdf',
-      'application/msword',
-      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-      'text/plain'
-    ];
-    if (allowedTypes.includes(file.mimetype)) {
-      cb(null, true);
-    } else {
-      cb(new Error('Invalid file type. Only PDF, DOC, DOCX, and TXT files are allowed.'));
-    }
-  }
+// Update timestamp on save
+collectionSchema.pre('save', function(next) {
+  this.updatedAt = Date.now();
+  next();
 });
 
-// Function to extract text from PDF
-async function extractTextFromPDF(filePath) {
+const User = mongoose.model('User', userSchema);
+const Collection = mongoose.model('Collection', collectionSchema);
+
+// ==================== COLLECTION ROUTES ====================
+
+// Get all collections
+app.get('/api/collections', async (req, res) => {
   try {
-    const dataBuffer = fs.readFileSync(filePath);
-    const data = await pdf(dataBuffer);
-    return data.text;
+    const collections = await Collection.find().sort({ createdAt: -1 });
+    
+    // Update applicant count for each collection
+    for (let collection of collections) {
+      const userCount = await User.countDocuments({ interviewId: collection.interviewId });
+      if (collection.applicants !== userCount) {
+        collection.applicants = userCount;
+        await collection.save();
+      }
+    }
+    
+    res.json(collections);
   } catch (error) {
-    console.error('PDF extraction error:', error);
-    throw new Error('Failed to extract text from PDF: ' + error.message);
+    console.error('Error fetching collections:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
   }
-}
-
-// Routes
-
-// Test route
-app.get("/", (req, res) => {
-  res.json({ message: "Backend running successfully" });
 });
 
-// Signup Route
-app.post("/api/signup", async (req, res) => {
+// Get single collection by ID
+app.get('/api/collections/:id', async (req, res) => {
   try {
-    const { name, email, password, profession } = req.body;
+    const collection = await Collection.findById(req.params.id);
+    if (!collection) {
+      return res.status(404).json({ message: 'Collection not found' });
+    }
+    
+    // Update applicant count
+    const userCount = await User.countDocuments({ interviewId: collection.interviewId });
+    collection.applicants = userCount;
+    await collection.save();
+    
+    res.json(collection);
+  } catch (error) {
+    console.error('Error fetching collection:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
 
-    // Validation
-    if (!name || !email || !password || !profession) {
-      return res.status(400).json({
-        success: false,
-        message: "All fields are required"
-      });
+// Create new collection
+app.post('/api/collections', async (req, res) => {
+  try {
+    const { interviewId, company, role, description, domain, level, startDateTime, endDateTime, fileName, users } = req.body;
+
+    // Check if interviewId already exists
+    const existingCollection = await Collection.findOne({ interviewId });
+    if (existingCollection) {
+      return res.status(400).json({ message: 'Interview ID already exists' });
     }
 
-    if (password.length < 6) {
-      return res.status(400).json({
-        success: false,
-        message: "Password must be at least 6 characters long"
-      });
+    // Validate date times
+    const parseCustomDateTime = (dateTimeStr) => {
+      const [datePart, timePart] = dateTimeStr.split(' ');
+      const [day, month, year] = datePart.split('-');
+      const [hours, minutes] = timePart.split(':');
+      return new Date(`${year}-${month}-${day}T${hours}:${minutes}`);
+    };
+
+    const start = parseCustomDateTime(startDateTime);
+    const end = parseCustomDateTime(endDateTime);
+    
+    if (start >= end) {
+      return res.status(400).json({ message: 'End date & time must be after start date & time' });
     }
 
-    // Check if user already exists
-    const existingUser = await User.findOne({ email });
+    // Create collection
+    const collection = new Collection({
+      interviewId,
+      company,
+      role,
+      description,
+      domain,
+      level,
+      startDateTime,
+      endDateTime,
+      fileName: fileName || '',
+      status: 'Active',
+      applicants: users ? users.length : 0
+    });
+
+    await collection.save();
+
+    // Create users if provided
+    if (users && users.length > 0) {
+      const usersWithInterviewId = users.map(user => ({
+        ...user,
+        interviewId: interviewId
+      }));
+      
+      await User.insertMany(usersWithInterviewId);
+    }
+
+    res.status(201).json(collection);
+  } catch (error) {
+    console.error('Error creating collection:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
+
+// Update collection
+app.put('/api/collections/:id', async (req, res) => {
+  try {
+    const { company, role, description, domain, level, startDateTime, endDateTime, fileName, status } = req.body;
+    
+    // Validate date times if both are provided
+    if (startDateTime && endDateTime) {
+      const parseCustomDateTime = (dateTimeStr) => {
+        const [datePart, timePart] = dateTimeStr.split(' ');
+        const [day, month, year] = datePart.split('-');
+        const [hours, minutes] = timePart.split(':');
+        return new Date(`${year}-${month}-${day}T${hours}:${minutes}`);
+      };
+
+      const start = parseCustomDateTime(startDateTime);
+      const end = parseCustomDateTime(endDateTime);
+      
+      if (start >= end) {
+        return res.status(400).json({ message: 'End date & time must be after start date & time' });
+      }
+    }
+
+    const collection = await Collection.findByIdAndUpdate(
+      req.params.id,
+      {
+        company,
+        role,
+        description,
+        domain,
+        level,
+        startDateTime,
+        endDateTime,
+        fileName,
+        status,
+        updatedAt: Date.now()
+      },
+      { new: true, runValidators: true }
+    );
+
+    if (!collection) {
+      return res.status(404).json({ message: 'Collection not found' });
+    }
+
+    res.json(collection);
+  } catch (error) {
+    console.error('Error updating collection:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
+
+// Delete collection
+app.delete('/api/collections/:id', async (req, res) => {
+  try {
+    const collection = await Collection.findById(req.params.id);
+    
+    if (!collection) {
+      return res.status(404).json({ message: 'Collection not found' });
+    }
+
+    // Delete all users associated with this interview
+    await User.deleteMany({ interviewId: collection.interviewId });
+    
+    // Delete the collection
+    await Collection.findByIdAndDelete(req.params.id);
+
+    res.json({ message: 'Collection and associated users deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting collection:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
+
+// ==================== USER ROUTES ====================
+
+// Get all users for a specific collection
+app.get('/api/collections/:id/users', async (req, res) => {
+  try {
+    const collection = await Collection.findById(req.params.id);
+    
+    if (!collection) {
+      return res.status(404).json({ message: 'Collection not found' });
+    }
+
+    const users = await User.find({ interviewId: collection.interviewId }).sort({ createdAt: -1 });
+    res.json(users);
+  } catch (error) {
+    console.error('Error fetching users:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
+
+// Add new user to a collection
+app.post('/api/collections/:id/users', async (req, res) => {
+  try {
+    const collection = await Collection.findById(req.params.id);
+    
+    if (!collection) {
+      return res.status(404).json({ message: 'Collection not found' });
+    }
+
+    const { name, loginId, password, score, status } = req.body;
+
+    // Check if user with same loginId already exists for this interview
+    const existingUser = await User.findOne({ 
+      loginId: loginId.toLowerCase(), 
+      interviewId: collection.interviewId 
+    });
+
     if (existingUser) {
-      return res.status(409).json({
-        success: false,
-        message: "User already exists with this email"
-      });
+      return res.status(400).json({ message: 'User with this email already exists for this interview' });
     }
 
-    // Create new user
-    const newUser = new User({
+    const user = new User({
       name,
-      email,
+      loginId: loginId.toLowerCase(),
       password,
-      profession
+      score: score || 0,
+      status: status || 'Active',
+      interviewId: collection.interviewId
     });
 
-    await newUser.save();
-
-    // Generate JWT token
-    const token = jwt.sign(
-      { userId: newUser._id, email: newUser.email },
-      JWT_SECRET,
-      { expiresIn: '24h' }
-    );
-
-    // Return user data (excluding password)
-    const userResponse = {
-      id: newUser._id,
-      name: newUser.name,
-      email: newUser.email,
-      profession: newUser.profession,
-      createdAt: newUser.createdAt
-    };
-
-    res.status(201).json({
-      success: true,
-      message: "User created successfully",
-      user: userResponse,
-      token: token
-    });
-
-  } catch (error) {
-    console.error("Signup error:", error);
-    res.status(500).json({
-      success: false,
-      message: "Internal server error",
-      error: error.message
-    });
-  }
-});
-
-// Login Route
-app.post("/api/login", async (req, res) => {
-  try {
-    const { email, password } = req.body;
-
-    // Validation
-    if (!email || !password) {
-      return res.status(400).json({
-        success: false,
-        message: "Email and password are required"
-      });
-    }
-
-    // Find user
-    const user = await User.findOne({ email });
-    if (!user) {
-      return res.status(401).json({
-        success: false,
-        message: "Invalid email or password"
-      });
-    }
-
-    // Check password
-    const isPasswordValid = await user.comparePassword(password);
-    if (!isPasswordValid) {
-      return res.status(401).json({
-        success: false,
-        message: "Invalid email or password"
-      });
-    }
-
-    // Generate JWT token
-    const token = jwt.sign(
-      { userId: user._id, email: user.email },
-      JWT_SECRET,
-      { expiresIn: '24h' }
-    );
-
-    // Return user data (excluding password)
-    const userResponse = {
-      id: user._id,
-      name: user.name,
-      email: user.email,
-      profession: user.profession,
-      createdAt: user.createdAt
-    };
-
-    res.json({
-      success: true,
-      message: "Login successful",
-      user: userResponse,
-      token: token
-    });
-
-  } catch (error) {
-    console.error("Login error:", error);
-    res.status(500).json({
-      success: false,
-      message: "Internal server error",
-      error: error.message
-    });
-  }
-});
-
-// Protected route example (for future use)
-app.get("/api/profile", async (req, res) => {
-  try {
-    const token = req.header('Authorization')?.replace('Bearer ', '');
-    
-    if (!token) {
-      return res.status(401).json({
-        success: false,
-        message: "No token provided"
-      });
-    }
-
-    const decoded = jwt.verify(token, JWT_SECRET);
-    const user = await User.findById(decoded.userId).select('-password');
-    
-    if (!user) {
-      return res.status(404).json({
-        success: false,
-        message: "User not found"
-      });
-    }
-
-    res.json({
-      success: true,
-      user: user
-    });
-
-  } catch (error) {
-    console.error("Profile error:", error);
-    res.status(401).json({
-      success: false,
-      message: "Invalid token"
-    });
-  }
-});
-
-// Change Password Route
-app.post("/api/change-password", async (req, res) => {
-  try {
-    const { currentPassword, newPassword, confirmPassword } = req.body;
-
-    // Validation
-    if (!currentPassword || !newPassword || !confirmPassword) {
-      return res.status(400).json({
-        success: false,
-        message: "All password fields are required"
-      });
-    }
-
-    if (newPassword.length < 6) {
-      return res.status(400).json({
-        success: false,
-        message: "New password must be at least 6 characters long"
-      });
-    }
-
-    if (newPassword !== confirmPassword) {
-      return res.status(400).json({
-        success: false,
-        message: "New passwords don't match"
-      });
-    }
-
-    // Get token from header
-    const token = req.header('Authorization')?.replace('Bearer ', '');
-    
-    if (!token) {
-      return res.status(401).json({
-        success: false,
-        message: "No token provided"
-      });
-    }
-
-    // Verify token and get user
-    const decoded = jwt.verify(token, JWT_SECRET);
-    const user = await User.findById(decoded.userId);
-    
-    if (!user) {
-      return res.status(404).json({
-        success: false,
-        message: "User not found"
-      });
-    }
-
-    // Check current password
-    const isCurrentPasswordValid = await user.comparePassword(currentPassword);
-    if (!isCurrentPasswordValid) {
-      return res.status(401).json({
-        success: false,
-        message: "Current password is incorrect"
-      });
-    }
-
-    // Update password
-    user.password = newPassword;
     await user.save();
 
-    res.json({
-      success: true,
-      message: "Password changed successfully"
-    });
+    // Update applicant count
+    collection.applicants += 1;
+    await collection.save();
 
+    res.status(201).json(user);
   } catch (error) {
-    console.error("Change password error:", error);
-    
-    if (error.name === 'JsonWebTokenError') {
-      return res.status(401).json({
-        success: false,
-        message: "Invalid token"
-      });
-    }
-
-    res.status(500).json({
-      success: false,
-      message: "Internal server error",
-      error: error.message
-    });
+    console.error('Error adding user:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
   }
 });
 
-// Save Interview Results Route
-app.post("/api/save-interview-results", async (req, res) => {
+// Update user (e.g., block/unblock, update score)
+app.patch('/api/collections/:collectionId/users/:userId', async (req, res) => {
   try {
-    const {
-      jobRole,
-      companyName,
-      overallScore,
-      performanceLevel,
-      conversationHistory,
-      knowledgeScores,
-      timer,
-      totalQuestions,
-      answeredQuestions,
-      difficultyLevel
-    } = req.body;
+    const { status, score } = req.body;
+    
+    const updateData = {};
+    if (status) updateData.status = status;
+    if (score !== undefined) updateData.score = score;
 
-    // Validation
-    if (!jobRole || !companyName || !overallScore) {
-      return res.status(400).json({
-        success: false,
-        message: "Required fields are missing"
-      });
+    const user = await User.findByIdAndUpdate(
+      req.params.userId,
+      updateData,
+      { new: true, runValidators: true }
+    );
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
     }
 
-    // Get user from token
-    const token = req.header('Authorization')?.replace('Bearer ', '');
-    if (!token) {
-      return res.status(401).json({
-        success: false,
-        message: "No token provided"
-      });
-    }
+    res.json(user);
+  } catch (error) {
+    console.error('Error updating user:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
 
-    const decoded = jwt.verify(token, JWT_SECRET);
-    const user = await User.findById(decoded.userId);
+// Delete user
+app.delete('/api/collections/:collectionId/users/:userId', async (req, res) => {
+  try {
+    const user = await User.findByIdAndDelete(req.params.userId);
     
     if (!user) {
-      return res.status(404).json({
-        success: false,
-        message: "User not found"
-      });
+      return res.status(404).json({ message: 'User not found' });
     }
 
-    // Create new interview result
-    const newInterviewResult = new InterviewResult({
-      userId: user._id,
-      jobRole,
-      companyName,
-      overallScore,
-      performanceLevel,
-      conversationHistory,
-      knowledgeScores,
-      timer,
-      totalQuestions,
-      answeredQuestions,
-      difficultyLevel
-    });
+    // Update applicant count in collection
+    const collection = await Collection.findById(req.params.collectionId);
+    if (collection) {
+      collection.applicants = Math.max(0, collection.applicants - 1);
+      await collection.save();
+    }
 
-    await newInterviewResult.save();
-
-    res.json({
-      success: true,
-      message: "Interview results saved successfully",
-      data: newInterviewResult
-    });
-
+    res.json({ message: 'User deleted successfully' });
   } catch (error) {
-    console.error("Save interview results error:", error);
-    res.status(500).json({
-      success: false,
-      message: "Error saving interview results",
-      error: error.message
-    });
+    console.error('Error deleting user:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
   }
 });
 
-// Get User's Interview Results Route
-app.get("/api/user-interview-results", async (req, res) => {
-  try {
-    // Get user from token
-    const token = req.header('Authorization')?.replace('Bearer ', '');
-    if (!token) {
-      return res.status(401).json({
-        success: false,
-        message: "No token provided"
-      });
-    }
+// ==================== AUTHENTICATION ROUTES ====================
 
-    const decoded = jwt.verify(token, JWT_SECRET);
-    const user = await User.findById(decoded.userId);
-    
+// User login (for frontend interview access)
+app.post('/api/auth/login', async (req, res) => {
+  try {
+    const { interviewId, loginId, password } = req.body;
+
+    // Find user
+    const user = await User.findOne({
+      interviewId: interviewId.toUpperCase(),
+      loginId: loginId.toLowerCase(),
+      password: password
+    });
+
     if (!user) {
-      return res.status(404).json({
-        success: false,
-        message: "User not found"
+      return res.status(401).json({ message: 'Invalid credentials' });
+    }
+
+    // Check if user is blocked
+    if (user.status === 'Blocked') {
+      return res.status(403).json({ message: 'Your account has been blocked' });
+    }
+
+    // Get collection details
+    const collection = await Collection.findOne({ interviewId: user.interviewId });
+
+    // Check if interview is within scheduled time
+    const parseCustomDateTime = (dateTimeStr) => {
+      const [datePart, timePart] = dateTimeStr.split(' ');
+      const [day, month, year] = datePart.split('-');
+      const [hours, minutes] = timePart.split(':');
+      return new Date(`${year}-${month}-${day}T${hours}:${minutes}`);
+    };
+
+    const now = new Date();
+    const start = parseCustomDateTime(collection.startDateTime);
+    const end = parseCustomDateTime(collection.endDateTime);
+
+    if (now < start) {
+      return res.status(403).json({ 
+        message: `Interview has not started yet. It will begin on ${collection.startDateTime}` 
       });
     }
 
-    // Find all interview results for the user
-    const interviewResults = await InterviewResult.find({ userId: user._id })
-      .sort({ date: -1 }) // Sort by most recent first
-      .select('-conversationHistory'); // Exclude conversation history for list view
+    if (now > end) {
+      return res.status(403).json({ 
+        message: `Interview has ended. It was scheduled until ${collection.endDateTime}` 
+      });
+    }
 
     res.json({
-      success: true,
-      data: interviewResults
+      user: {
+        id: user._id,
+        name: user.name,
+        loginId: user.loginId,
+        score: user.score,
+        interviewId: user.interviewId
+      },
+      collection: collection
     });
-
   } catch (error) {
-    console.error("Get interview results error:", error);
-    res.status(500).json({
-      success: false,
-      message: "Error fetching interview results",
-      error: error.message
-    });
+    console.error('Error during login:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
   }
 });
 
-// Get Specific Interview Result by ID
-app.get("/api/interview-result/:id", async (req, res) => {
+// Get user by interviewId and loginId
+app.get('/api/users/:interviewId/:loginId', async (req, res) => {
   try {
-    const { id } = req.params;
-
-    // Get user from token
-    const token = req.header('Authorization')?.replace('Bearer ', '');
-    if (!token) {
-      return res.status(401).json({
-        success: false,
-        message: "No token provided"
-      });
-    }
-
-    const decoded = jwt.verify(token, JWT_SECRET);
-    
-    // Find interview result and ensure it belongs to the user
-    const interviewResult = await InterviewResult.findOne({
-      _id: id,
-      userId: decoded.userId
+    const user = await User.findOne({
+      interviewId: req.params.interviewId.toUpperCase(),
+      loginId: req.params.loginId.toLowerCase()
     });
 
-    if (!interviewResult) {
-      return res.status(404).json({
-        success: false,
-        message: "Interview result not found"
-      });
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
     }
 
-    res.json({
-      success: true,
-      data: interviewResult
-    });
-
+    res.json(user);
   } catch (error) {
-    console.error("Get specific interview result error:", error);
-    res.status(500).json({
-      success: false,
-      message: "Error fetching interview result",
-      error: error.message
-    });
+    console.error('Error fetching user:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
   }
 });
 
-// Process Interview Details Route (WITH PDF EXTRACTION)
-app.post("/api/process-interview-details", upload.single('resume'), async (req, res) => {
+// ==================== STATISTICS ROUTES ====================
+
+// Get dashboard statistics
+app.get('/api/statistics', async (req, res) => {
   try {
-    const { jobName, companyName, jobDescription, questionLevel } = req.body;
-    const resumeFile = req.file;
+    const totalCollections = await Collection.countDocuments();
+    const activeCollections = await Collection.countDocuments({ status: 'Active' });
+    const closedCollections = await Collection.countDocuments({ status: 'Closed' });
+    const totalUsers = await User.countDocuments();
+    const activeUsers = await User.countDocuments({ status: 'Active' });
+    const blockedUsers = await User.countDocuments({ status: 'Blocked' });
 
-    // Validation
-    if (!jobName || !companyName || !jobDescription || !questionLevel) {
-      return res.status(400).json({
-        success: false,
-        message: "All fields are required"
-      });
-    }
-
-    if (!resumeFile) {
-      return res.status(400).json({
-        success: false,
-        message: "Resume file is required"
-      });
-    }
-
-    let resumeText = '';
-    
-    try {
-      // Extract text based on file type
-      if (resumeFile.mimetype === 'application/pdf') {
-        console.log('📄 Extracting text from PDF...');
-        resumeText = await extractTextFromPDF(resumeFile.path);
-        console.log('✅ PDF text extraction successful!');
-      } 
-      else if (resumeFile.mimetype === 'text/plain') {
-        console.log('📄 Reading text file...');
-        resumeText = fs.readFileSync(resumeFile.path, 'utf8');
-        console.log('✅ Text file read successfully!');
-      } 
-      else if (resumeFile.mimetype === 'application/msword' || 
-               resumeFile.mimetype === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
-        resumeText = 'DOC/DOCX file uploaded. Text extraction for Word documents requires additional libraries (mammoth or docx-parser).';
-        console.log('⚠️ Word document uploaded - text extraction not implemented yet');
-      }
-      else {
-        resumeText = 'File uploaded successfully';
-      }
-    } catch (extractionError) {
-      console.error('❌ Text extraction error:', extractionError);
-      resumeText = `Error extracting text: ${extractionError.message}`;
-    }
-
-    // Clean up uploaded file
-    try {
-      if (fs.existsSync(resumeFile.path)) {
-        fs.unlinkSync(resumeFile.path);
-        console.log('🗑️ Uploaded file cleaned up successfully');
-      }
-    } catch (cleanupError) {
-      console.error('❌ File cleanup error:', cleanupError);
-    }
-
-    // Log all details to console
-    console.log('\n' + '='.repeat(50));
-    console.log('📋 JOB INTERVIEW DETAILS SUBMITTED');
-    console.log('='.repeat(50));
-    console.log('👔 Job Title:', jobName);
-    console.log('🏢 Company Name:', companyName);
-    console.log('📝 Job Description:', jobDescription);
-    console.log('📊 Question Level:', questionLevel);
-    console.log('-'.repeat(50));
-    console.log('📎 Resume File Name:', resumeFile.originalname);
-    console.log('📄 Resume File Type:', resumeFile.mimetype);
-    console.log('💾 Resume File Size:', `${(resumeFile.size / 1024).toFixed(2)} KB`);
-    console.log('-'.repeat(50));
-    console.log('📖 RESUME TEXT CONTENT:');
-    console.log('-'.repeat(50));
-    console.log(resumeText);
-    console.log('='.repeat(50) + '\n');
-
-    // Return success response
     res.json({
-      success: true,
-      message: "Interview details processed successfully",
-      data: {
-        jobName,
-        companyName,
-        jobDescription,
-        questionLevel,
-        resume: {
-          fileName: resumeFile.originalname,
-          fileType: resumeFile.mimetype,
-          fileSize: `${(resumeFile.size / 1024).toFixed(2)} KB`,
-          textContent: resumeText
-        }
+      collections: {
+        total: totalCollections,
+        active: activeCollections,
+        closed: closedCollections
+      },
+      users: {
+        total: totalUsers,
+        active: activeUsers,
+        blocked: blockedUsers
       }
     });
-
   } catch (error) {
-    console.error("❌ Process interview details error:", error);
-    
-    // Clean up file in case of error
-    if (req.file && fs.existsSync(req.file.path)) {
-      try {
-        fs.unlinkSync(req.file.path);
-      } catch (cleanupError) {
-        console.error('Error cleaning up file:', cleanupError);
-      }
-    }
-
-    res.status(500).json({
-      success: false,
-      message: "Error processing interview details",
-      error: error.message
-    });
+    console.error('Error fetching statistics:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
   }
 });
 
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+// Health check route
+app.get('/api/health', (req, res) => {
+  res.json({ 
+    status: 'ok', 
+    message: 'EvalBot API is running',
+    timestamp: new Date().toISOString()
+  });
+});
+
+// Start server
+app.listen(PORT, () => {
+  console.log(`🚀 Server is running on port ${PORT}`);
+  console.log(`📡 API available at http://localhost:${PORT}/api`);
+});

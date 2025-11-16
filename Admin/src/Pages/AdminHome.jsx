@@ -1,10 +1,13 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import * as XLSX from 'xlsx';
 import { 
   Plus, Briefcase, Calendar, Building2, FileText, Search, Filter, MoreVertical, 
   Eye, Trash2, ChevronRight, X, Upload, Building2 as BuildingIcon, Hash, Clock,
-  Star
+  Star, Loader2
 } from 'lucide-react';
+
+const API_URL = 'http://localhost:5000/api';
 
 // Function to generate alphanumeric interview ID
 function generateInterviewId() {
@@ -73,11 +76,24 @@ function CollectionCard({ collection, onView, onDelete }) {
     'Advanced': 'bg-red-100 text-red-700 border border-red-200'
   };
 
-  const levelIcons = {
-    'Beginner': '',
-    'Intermediate': '',
-    'Advanced': ''
+  const getInterviewStatus = (startDateTime, endDateTime) => {
+    const now = new Date();
+    const start = parseCustomDateTime(startDateTime);
+    const end = parseCustomDateTime(endDateTime);
+    
+    if (now < start) return { status: 'Upcoming', color: 'bg-blue-100 text-blue-700 border-blue-200' };
+    if (now >= start && now <= end) return { status: 'Live', color: 'bg-green-100 text-green-700 border-green-200' };
+    return { status: 'Completed', color: 'bg-slate-100 text-slate-700 border-slate-200' };
   };
+
+  const parseCustomDateTime = (dateTimeStr) => {
+    const [datePart, timePart] = dateTimeStr.split(' ');
+    const [day, month, year] = datePart.split('-');
+    const [hours, minutes] = timePart.split(':');
+    return new Date(`${year}-${month}-${day}T${hours}:${minutes}`);
+  };
+
+  const interviewStatus = getInterviewStatus(collection.startDateTime, collection.endDateTime);
 
   return (
     <div className="bg-white rounded-lg border border-slate-200 hover:border-blue-300 hover:shadow-md transition-all duration-200 overflow-hidden group">
@@ -114,7 +130,7 @@ function CollectionCard({ collection, onView, onDelete }) {
                 </button>
                 <button
                   onClick={() => {
-                    onDelete(collection.id);
+                    onDelete(collection._id);
                     setShowMenu(false);
                   }}
                   className="w-full px-4 py-2 text-left hover:bg-red-50 text-red-600 flex items-center space-x-2"
@@ -127,11 +143,13 @@ function CollectionCard({ collection, onView, onDelete }) {
           </div>
         </div>
 
-        {/* Interview ID Display */}
         <div className="flex items-center space-x-2 mb-3">
           <Hash className="w-4 h-4 text-slate-500" />
           <span className="text-sm font-mono bg-slate-100 px-2 py-1 rounded border border-slate-200">
             {collection.interviewId}
+          </span>
+          <span className={`px-2 py-1 rounded-full text-xs font-medium border ${interviewStatus.color}`}>
+            {interviewStatus.status}
           </span>
         </div>
 
@@ -142,19 +160,34 @@ function CollectionCard({ collection, onView, onDelete }) {
             {collection.domain}
           </span>
           <span className={`px-3 py-1 rounded-full text-xs font-medium ${levelColors[collection.level]}`}>
-            {levelIcons[collection.level]} {collection.level}
+            {collection.level}
           </span>
         </div>
 
+        <div className="space-y-2 mb-4">
+          <div className="flex items-center justify-between text-sm text-slate-600">
+            <div className="flex items-center space-x-2">
+              <Calendar className="w-4 h-4" />
+              <span>Start: {collection.startDateTime.split(' ')[0]}</span>
+            </div>
+            <div className="flex items-center space-x-2">
+              <Clock className="w-4 h-4" />
+              <span>{collection.startDateTime.split(' ')[1]}</span>
+            </div>
+          </div>
+          <div className="flex items-center justify-between text-sm text-slate-600">
+            <div className="flex items-center space-x-2">
+              <Calendar className="w-4 h-4" />
+              <span>End: {collection.endDateTime.split(' ')[0]}</span>
+            </div>
+            <div className="flex items-center space-x-2">
+              <Clock className="w-4 h-4" />
+              <span>{collection.endDateTime.split(' ')[1]}</span>
+            </div>
+          </div>
+        </div>
+
         <div className="flex items-center justify-between text-sm text-slate-600 mb-4">
-          <div className="flex items-center space-x-2">
-            <Calendar className="w-4 h-4" />
-            <span>{collection.date.split(' ')[0]}</span>
-          </div>
-          <div className="flex items-center space-x-2">
-            <Clock className="w-4 h-4" />
-            <span>{collection.date.split(' ')[1]}</span>
-          </div>
           <div className="flex items-center space-x-2">
             <FileText className="w-4 h-4" />
             <span>{collection.applicants} applicants</span>
@@ -163,7 +196,7 @@ function CollectionCard({ collection, onView, onDelete }) {
 
         <button
           onClick={() => onView(collection)}
-          className="w-full bg-linear-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white py-2.5 rounded-lg font-medium flex items-center justify-center space-x-2 transition-all duration-200 shadow-sm hover:shadow-md"
+          className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white py-2.5 rounded-lg font-medium flex items-center justify-center space-x-2 transition-all duration-200 shadow-sm hover:shadow-md"
         >
           <span>View Details</span>
           <ChevronRight className="w-4 h-4" />
@@ -183,18 +216,84 @@ function CreateCollectionPopup({ onClose, onCreate }) {
     level: 'Intermediate',
     fileName: '',
     interviewId: generateInterviewId(),
-    date: formatDateTime()
+    startDateTime: formatDateTime(),
+    endDateTime: formatDateTime(new Date(Date.now() + 2 * 60 * 60 * 1000)) // Default 2 hours later
   });
+  const [excelFile, setExcelFile] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
 
-  const handleSubmit = () => {
-    if (formData.company && formData.role && formData.description) {
-      onCreate(formData);
+  const handleSubmit = async () => {
+    if (!formData.company || !formData.role || !formData.description) {
+      setError('Please fill in all required fields');
+      return;
     }
+
+    // Validate date times
+    const start = parseCustomDateTime(formData.startDateTime);
+    const end = parseCustomDateTime(formData.endDateTime);
+    
+    if (start >= end) {
+      setError('End date & time must be after start date & time');
+      return;
+    }
+
+    setIsLoading(true);
+    setError('');
+
+    try {
+      let users = [];
+
+      // Parse Excel file if uploaded
+      if (excelFile) {
+        const data = await excelFile.arrayBuffer();
+        const workbook = XLSX.read(data);
+        const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+        const jsonData = XLSX.utils.sheet_to_json(worksheet);
+
+        users = jsonData.map(row => ({
+          name: row.Name || row.name || '',
+          loginId: (row.Email || row.email || '').toLowerCase(),
+          password: String(row['Mobile.no'] || row['Mobile no'] || row.Mobile || row.mobile || ''),
+          score: 0,
+          status: 'Active'
+        })).filter(user => user.name && user.loginId && user.password);
+      }
+
+      const collectionData = {
+        interviewId: formData.interviewId,
+        company: formData.company,
+        role: formData.role,
+        description: formData.description,
+        domain: formData.domain,
+        level: formData.level,
+        startDateTime: formData.startDateTime,
+        endDateTime: formData.endDateTime,
+        fileName: formData.fileName,
+        users: users
+      };
+
+      await onCreate(collectionData);
+      onClose();
+    } catch (err) {
+      console.error('Error creating collection:', err);
+      setError('Failed to create collection. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const parseCustomDateTime = (dateTimeStr) => {
+    const [datePart, timePart] = dateTimeStr.split(' ');
+    const [day, month, year] = datePart.split('-');
+    const [hours, minutes] = timePart.split(':');
+    return new Date(`${year}-${month}-${day}T${hours}:${minutes}`);
   };
 
   const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (file) {
+      setExcelFile(file);
       setFormData({ ...formData, fileName: file.name });
     }
   };
@@ -203,36 +302,39 @@ function CreateCollectionPopup({ onClose, onCreate }) {
     setFormData({ ...formData, interviewId: generateInterviewId() });
   };
 
-  const handleDateTimeChange = (e) => {
+  const handleDateTimeChange = (field, e) => {
     const selectedDateTime = new Date(e.target.value);
-    setFormData({ ...formData, date: formatDateTime(selectedDateTime) });
+    setFormData({ ...formData, [field]: formatDateTime(selectedDateTime) });
   };
 
-  // Convert current formData.date to ISO string for datetime-local input
-  const getDateTimeLocalValue = () => {
-    const [datePart, timePart] = formData.date.split(' ');
+  const getDateTimeLocalValue = (dateTimeStr) => {
+    const [datePart, timePart] = dateTimeStr.split(' ');
     const [day, month, year] = datePart.split('-');
     const [hours, minutes] = timePart.split(':');
-    
-    // Format: YYYY-MM-DDTHH:MM
     return `${year}-${month}-${day}T${hours}:${minutes}`;
   };
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-        <div className="sticky top-0 bg-linear-to-r from-blue-600 to-indigo-600 text-white p-6 flex items-center justify-between rounded-t-xl">
+        <div className="sticky top-0 bg-gradient-to-r from-blue-600 to-indigo-600 text-white p-6 flex items-center justify-between rounded-t-xl">
           <h2 className="text-xl font-semibold">Create New Collection</h2>
           <button
             onClick={onClose}
             className="p-2 hover:bg-white/20 rounded-lg transition-colors"
+            disabled={isLoading}
           >
             <X className="w-6 h-6" />
           </button>
         </div>
 
         <div className="p-6 space-y-6">
-          {/* Interview ID Field */}
+          {error && (
+            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
+              {error}
+            </div>
+          )}
+
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-2">
               Interview ID *
@@ -247,19 +349,18 @@ function CreateCollectionPopup({ onClose, onCreate }) {
                   className="w-full pl-10 pr-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 font-mono"
                   placeholder="Enter interview ID"
                   maxLength={8}
+                  disabled={isLoading}
                 />
               </div>
               <button
                 type="button"
                 onClick={regenerateInterviewId}
                 className="px-4 py-3 border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors text-sm font-medium"
+                disabled={isLoading}
               >
                 Regenerate
               </button>
             </div>
-            <p className="text-xs text-slate-500 mt-1">
-              Unique identifier for this interview collection (8 characters max)
-            </p>
           </div>
 
           <div>
@@ -272,6 +373,7 @@ function CreateCollectionPopup({ onClose, onCreate }) {
               onChange={(e) => setFormData({ ...formData, company: e.target.value })}
               className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               placeholder="Enter company name"
+              disabled={isLoading}
             />
           </div>
 
@@ -285,26 +387,42 @@ function CreateCollectionPopup({ onClose, onCreate }) {
               onChange={(e) => setFormData({ ...formData, role: e.target.value })}
               className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               placeholder="Enter role title"
+              disabled={isLoading}
             />
           </div>
 
-          {/* Date and Time Field */}
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-2">
-              Date & Time *
-            </label>
-            <div className="relative">
-              <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-5 h-5" />
-              <input
-                type="datetime-local"
-                value={getDateTimeLocalValue()}
-                onChange={handleDateTimeChange}
-                className="w-full pl-10 pr-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-2">
+                Start Date & Time *
+              </label>
+              <div className="relative">
+                <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-5 h-5" />
+                <input
+                  type="datetime-local"
+                  value={getDateTimeLocalValue(formData.startDateTime)}
+                  onChange={(e) => handleDateTimeChange('startDateTime', e)}
+                  className="w-full pl-10 pr-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  disabled={isLoading}
+                />
+              </div>
             </div>
-            <p className="text-xs text-slate-500 mt-1">
-              Selected: {formData.date}
-            </p>
+
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-2">
+                End Date & Time *
+              </label>
+              <div className="relative">
+                <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-5 h-5" />
+                <input
+                  type="datetime-local"
+                  value={getDateTimeLocalValue(formData.endDateTime)}
+                  onChange={(e) => handleDateTimeChange('endDateTime', e)}
+                  className="w-full pl-10 pr-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  disabled={isLoading}
+                />
+              </div>
+            </div>
           </div>
 
           <div>
@@ -317,6 +435,7 @@ function CreateCollectionPopup({ onClose, onCreate }) {
               className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
               placeholder="Enter job description"
               rows={4}
+              disabled={isLoading}
             />
           </div>
 
@@ -329,6 +448,7 @@ function CreateCollectionPopup({ onClose, onCreate }) {
                 value={formData.domain}
                 onChange={(e) => setFormData({ ...formData, domain: e.target.value })}
                 className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                disabled={isLoading}
               >
                 <option value="Computer Science">Computer Science</option>
                 <option value="Role Based">Role Based</option>
@@ -343,6 +463,7 @@ function CreateCollectionPopup({ onClose, onCreate }) {
                 value={formData.level}
                 onChange={(e) => setFormData({ ...formData, level: e.target.value })}
                 className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                disabled={isLoading}
               >
                 <option value="Beginner">Beginner</option>
                 <option value="Intermediate">Intermediate</option>
@@ -353,7 +474,7 @@ function CreateCollectionPopup({ onClose, onCreate }) {
 
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-2">
-              Upload File (Excel)
+              Upload File (Excel) - Optional
             </label>
             <div className="relative">
               <input
@@ -362,30 +483,42 @@ function CreateCollectionPopup({ onClose, onCreate }) {
                 accept=".xlsx,.xls"
                 className="hidden"
                 id="file-upload"
+                disabled={isLoading}
               />
               <label
                 htmlFor="file-upload"
-                className="w-full px-4 py-3 border-2 border-dashed border-slate-300 rounded-lg hover:border-blue-400 transition-colors cursor-pointer flex items-center justify-center space-x-2 text-slate-600 hover:text-blue-600"
+                className={`w-full px-4 py-3 border-2 border-dashed border-slate-300 rounded-lg hover:border-blue-400 transition-colors cursor-pointer flex items-center justify-center space-x-2 text-slate-600 hover:text-blue-600 ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
               >
                 <Upload className="w-5 h-5" />
                 <span>{formData.fileName || 'Choose Excel file'}</span>
               </label>
             </div>
+            <p className="text-xs text-slate-500 mt-1">
+              Excel format: Name, Email, Mobile.no
+            </p>
           </div>
 
           <div className="flex space-x-4 pt-4">
             <button
               onClick={onClose}
               className="flex-1 px-6 py-3 border border-slate-300 text-slate-700 rounded-lg font-medium hover:bg-slate-50 transition-colors"
+              disabled={isLoading}
             >
               Cancel
             </button>
             <button
               onClick={handleSubmit}
-              disabled={!formData.interviewId || !formData.company || !formData.role || !formData.description}
-              className="flex-1 px-6 py-3 bg-linear-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 disabled:from-slate-400 disabled:to-slate-500 disabled:cursor-not-allowed text-white rounded-lg font-medium transition-all duration-200 shadow-lg shadow-blue-500/30"
+              disabled={!formData.interviewId || !formData.company || !formData.role || !formData.description || !formData.startDateTime || !formData.endDateTime || isLoading}
+              className="flex-1 px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 disabled:from-slate-400 disabled:to-slate-500 disabled:cursor-not-allowed text-white rounded-lg font-medium transition-all duration-200 shadow-lg shadow-blue-500/30 flex items-center justify-center space-x-2"
             >
-              Create Collection
+              {isLoading ? (
+                <>
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                  <span>Creating...</span>
+                </>
+              ) : (
+                <span>Create Collection</span>
+              )}
             </button>
           </div>
         </div>
@@ -398,64 +531,66 @@ function CreateCollectionPopup({ onClose, onCreate }) {
 function AdminHome() {
   const navigate = useNavigate();
   const [isPopupOpen, setIsPopupOpen] = useState(false);
-  const [collections, setCollections] = useState([
-    {
-      id: 1,
-      company: 'Google',
-      role: 'Software Developer',
-      date: '25-09-2025 14:30',
-      description: 'Full-stack development position focusing on cloud services',
-      domain: 'Computer Science',
-      level: 'Advanced',
-      fileName: 'candidates.xlsx',
-      status: 'Active',
-      applicants: 45,
-      interviewId: 'GOOG1234'
-    },
-    {
-      id: 2,
-      company: 'Microsoft',
-      role: 'Product Manager',
-      date: '20-09-2025 10:15',
-      description: 'Lead product strategy for Azure services',
-      domain: 'Role Based',
-      level: 'Intermediate',
-      fileName: 'applications.xlsx',
-      status: 'Active',
-      applicants: 32,
-      interviewId: 'MSFT5678'
-    },
-    {
-      id: 3,
-      company: 'Amazon',
-      role: 'Data Scientist',
-      date: '18-09-2025 16:45',
-      description: 'ML/AI research and implementation',
-      domain: 'Computer Science',
-      level: 'Beginner',
-      fileName: 'data_candidates.xlsx',
-      status: 'Closed',
-      applicants: 67,
-      interviewId: 'AMZN9012'
-    }
-  ]);
+  const [collections, setCollections] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterDomain, setFilterDomain] = useState('all');
   const [filterLevel, setFilterLevel] = useState('all');
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState('');
 
-  const handleCreateCollection = (newCollection) => {
-    const collection = {
-      ...newCollection,
-      id: collections.length + 1,
-      status: 'Active',
-      applicants: 0
-    };
-    setCollections([collection, ...collections]);
-    setIsPopupOpen(false);
+  useEffect(() => {
+    fetchCollections();
+  }, []);
+
+  const fetchCollections = async () => {
+    try {
+      setIsLoading(true);
+      const response = await fetch(`${API_URL}/collections`);
+      if (!response.ok) throw new Error('Failed to fetch collections');
+      const data = await response.json();
+      setCollections(data);
+    } catch (err) {
+      console.error('Error fetching collections:', err);
+      setError('Failed to load collections');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const handleDeleteCollection = (id) => {
-    setCollections(collections.filter(c => c.id !== id));
+  const handleCreateCollection = async (newCollection) => {
+    try {
+      const response = await fetch(`${API_URL}/collections`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(newCollection),
+      });
+
+      if (!response.ok) throw new Error('Failed to create collection');
+      
+      await fetchCollections();
+    } catch (err) {
+      console.error('Error creating collection:', err);
+      throw err;
+    }
+  };
+
+  const handleDeleteCollection = async (id) => {
+    if (!window.confirm('Are you sure you want to delete this collection?')) return;
+
+    try {
+      const response = await fetch(`${API_URL}/collections/${id}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) throw new Error('Failed to delete collection');
+      
+      await fetchCollections();
+    } catch (err) {
+      console.error('Error deleting collection:', err);
+      alert('Failed to delete collection');
+    }
   };
 
   const handleViewCollection = (collection) => {
@@ -471,14 +606,28 @@ function AdminHome() {
     return matchesSearch && matchesDomain && matchesLevel;
   });
 
+  const totalApplicants = collections.reduce((sum, c) => sum + (c.applicants || 0), 0);
+  const activeJobs = collections.filter(c => c.status === 'Active').length;
+  const closedJobs = collections.filter(c => c.status === 'Closed').length;
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50/30 flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="w-12 h-12 text-blue-600 animate-spin mx-auto mb-4" />
+          <p className="text-slate-600">Loading collections...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-linear-to-br from-slate-50 to-blue-50/30">
-      {/* Professional Header */}
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50/30">
       <header className="bg-white shadow-sm border-b border-slate-200">
         <div className="max-w-7xl mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
-              <div className="bg-linear-to-r from-blue-600 to-indigo-600 text-white px-4 py-2 rounded-lg font-semibold text-xl shadow-sm">
+              <div className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-4 py-2 rounded-lg font-semibold text-xl shadow-sm">
                 ADMIN
               </div>
               <div className="hidden md:flex items-center space-x-2 text-slate-600">
@@ -489,7 +638,7 @@ function AdminHome() {
             </div>
             <button
               onClick={() => setIsPopupOpen(true)}
-              className="bg-linear-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-6 py-2.5 rounded-lg font-medium flex items-center space-x-2 transition-all duration-200 shadow-lg shadow-blue-500/30 hover:shadow-xl hover:shadow-blue-500/40"
+              className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-6 py-2.5 rounded-lg font-medium flex items-center space-x-2 transition-all duration-200 shadow-lg shadow-blue-500/30 hover:shadow-xl hover:shadow-blue-500/40"
             >
               <Plus className="w-5 h-5" />
               <span>Create Collection</span>
@@ -498,16 +647,14 @@ function AdminHome() {
         </div>
       </header>
 
-      {/* Stats Section */}
       <div className="max-w-7xl mx-auto px-6 py-8">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
           <StatCard title="Total Collections" value={collections.length} icon={Briefcase} color="blue" />
-          <StatCard title="Active Jobs" value={collections.filter(c => c.status === 'Active').length} icon={FileText} color="blue" />
-          <StatCard title="Total Applicants" value={collections.reduce((sum, c) => sum + c.applicants, 0)} icon={Building2} color="blue" />
-          <StatCard title="Closed Jobs" value={collections.filter(c => c.status === 'Closed').length} icon={Calendar} color="blue" />
+          <StatCard title="Active Jobs" value={activeJobs} icon={FileText} color="blue" />
+          <StatCard title="Total Applicants" value={totalApplicants} icon={Building2} color="blue" />
+          <StatCard title="Closed Jobs" value={closedJobs} icon={Calendar} color="blue" />
         </div>
 
-        {/* Search and Filter */}
         <div className="bg-white rounded-lg border border-slate-200 p-6 mb-6 shadow-sm">
           <div className="flex flex-col md:flex-row gap-4">
             <div className="flex-1 relative">
@@ -548,11 +695,10 @@ function AdminHome() {
           </div>
         </div>
 
-        {/* Collections Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredCollections.map((collection) => (
             <CollectionCard
-              key={collection.id}
+              key={collection._id}
               collection={collection}
               onView={handleViewCollection}
               onDelete={handleDeleteCollection}
@@ -569,7 +715,6 @@ function AdminHome() {
         )}
       </div>
 
-      {/* Create Collection Popup */}
       {isPopupOpen && (
         <CreateCollectionPopup
           onClose={() => setIsPopupOpen(false)}
