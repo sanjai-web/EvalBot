@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   Plus, Briefcase, Calendar, Building2, FileText, Search, Filter, MoreVertical, 
-  Eye, Trash2, ChevronRight, X, Upload, Building2 as BuildingIcon, Hash, Clock
+  Eye, Trash2, ChevronRight, X, Upload, Building2 as BuildingIcon, Hash, Clock,
+  Star
 } from 'lucide-react';
 
 // Function to generate alphanumeric interview ID
@@ -64,6 +65,18 @@ function CollectionCard({ collection, onView, onDelete }) {
   const domainColors = {
     'Computer Science': 'bg-blue-100 text-blue-700 border border-blue-200',
     'Role Based': 'bg-purple-100 text-purple-700 border border-purple-200'
+  };
+
+  const levelColors = {
+    'Beginner': 'bg-green-100 text-green-700 border border-green-200',
+    'Intermediate': 'bg-yellow-100 text-yellow-700 border border-yellow-200',
+    'Advanced': 'bg-red-100 text-red-700 border border-red-200'
+  };
+
+  const levelIcons = {
+    'Beginner': '',
+    'Intermediate': '',
+    'Advanced': ''
   };
 
   return (
@@ -128,12 +141,8 @@ function CollectionCard({ collection, onView, onDelete }) {
           <span className={`px-3 py-1 rounded-full text-xs font-medium ${domainColors[collection.domain]}`}>
             {collection.domain}
           </span>
-          <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-            collection.status === 'Active' 
-              ? 'bg-green-100 text-green-700 border border-green-200' 
-              : 'bg-slate-100 text-slate-700'
-          }`}>
-            {collection.status}
+          <span className={`px-3 py-1 rounded-full text-xs font-medium ${levelColors[collection.level]}`}>
+            {levelIcons[collection.level]} {collection.level}
           </span>
         </div>
 
@@ -171,6 +180,7 @@ function CreateCollectionPopup({ onClose, onCreate }) {
     role: '',
     description: '',
     domain: 'Computer Science',
+    level: 'Intermediate',
     fileName: '',
     interviewId: generateInterviewId(),
     date: formatDateTime()
@@ -310,18 +320,35 @@ function CreateCollectionPopup({ onClose, onCreate }) {
             />
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-2">
-              Domain *
-            </label>
-            <select
-              value={formData.domain}
-              onChange={(e) => setFormData({ ...formData, domain: e.target.value })}
-              className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            >
-              <option value="Computer Science">Computer Science</option>
-              <option value="Role Based">Role Based</option>
-            </select>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-2">
+                Domain *
+              </label>
+              <select
+                value={formData.domain}
+                onChange={(e) => setFormData({ ...formData, domain: e.target.value })}
+                className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              >
+                <option value="Computer Science">Computer Science</option>
+                <option value="Role Based">Role Based</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-2">
+                Interview Level *
+              </label>
+              <select
+                value={formData.level}
+                onChange={(e) => setFormData({ ...formData, level: e.target.value })}
+                className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              >
+                <option value="Beginner">Beginner</option>
+                <option value="Intermediate">Intermediate</option>
+                <option value="Advanced">Advanced</option>
+              </select>
+            </div>
           </div>
 
           <div>
@@ -379,6 +406,7 @@ function AdminHome() {
       date: '25-09-2025 14:30',
       description: 'Full-stack development position focusing on cloud services',
       domain: 'Computer Science',
+      level: 'Advanced',
       fileName: 'candidates.xlsx',
       status: 'Active',
       applicants: 45,
@@ -391,6 +419,7 @@ function AdminHome() {
       date: '20-09-2025 10:15',
       description: 'Lead product strategy for Azure services',
       domain: 'Role Based',
+      level: 'Intermediate',
       fileName: 'applications.xlsx',
       status: 'Active',
       applicants: 32,
@@ -403,6 +432,7 @@ function AdminHome() {
       date: '18-09-2025 16:45',
       description: 'ML/AI research and implementation',
       domain: 'Computer Science',
+      level: 'Beginner',
       fileName: 'data_candidates.xlsx',
       status: 'Closed',
       applicants: 67,
@@ -411,6 +441,7 @@ function AdminHome() {
   ]);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterDomain, setFilterDomain] = useState('all');
+  const [filterLevel, setFilterLevel] = useState('all');
 
   const handleCreateCollection = (newCollection) => {
     const collection = {
@@ -436,7 +467,8 @@ function AdminHome() {
                          collection.role.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          collection.interviewId.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesDomain = filterDomain === 'all' || collection.domain === filterDomain;
-    return matchesSearch && matchesDomain;
+    const matchesLevel = filterLevel === 'all' || collection.level === filterLevel;
+    return matchesSearch && matchesDomain && matchesLevel;
   });
 
   return (
@@ -498,6 +530,19 @@ function AdminHome() {
                 <option value="all">All Domains</option>
                 <option value="Computer Science">Computer Science</option>
                 <option value="Role Based">Role Based</option>
+              </select>
+            </div>
+            <div className="flex items-center space-x-2">
+              <Star className="text-slate-400 w-5 h-5" />
+              <select
+                value={filterLevel}
+                onChange={(e) => setFilterLevel(e.target.value)}
+                className="px-4 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              >
+                <option value="all">All Levels</option>
+                <option value="Beginner">Beginner</option>
+                <option value="Intermediate">Intermediate</option>
+                <option value="Advanced">Advanced</option>
               </select>
             </div>
           </div>

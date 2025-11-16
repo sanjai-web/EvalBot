@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { 
   ChevronRight, Calendar, FileText, Building2, Upload, Edit, Trash2, Mail, 
-  Phone, User, Search, Filter, Eye, Ban, CheckCircle, Hash, X, Save, Plus, Clock
+  Phone, User, Search, Filter, Eye, Ban, CheckCircle, Hash, X, Save, Plus, Clock,
+  Star
 } from 'lucide-react';
 
 function AdminDetails() {
@@ -31,6 +32,13 @@ function AdminDetails() {
     mobile: '',
     overallScore: ''
   });
+
+  // Level configuration
+  const levelConfig = {
+    'Beginner': { color: 'green', icon: '', bgColor: 'bg-green-100', textColor: 'text-green-700', borderColor: 'border-green-200' },
+    'Intermediate': { color: 'yellow', icon: '', bgColor: 'bg-yellow-100', textColor: 'text-yellow-700', borderColor: 'border-yellow-200' },
+    'Advanced': { color: 'red', icon: '', bgColor: 'bg-red-100', textColor: 'text-red-700', borderColor: 'border-red-200' }
+  };
 
   // Filter students based on search term
   const filteredStudents = students.filter(student =>
@@ -224,13 +232,34 @@ function AdminDetails() {
                   </div>
                 )}
               </div>
-              <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-                editedCollection.status === 'Active' 
-                  ? 'bg-green-100 text-green-800 border border-green-200' 
-                  : 'bg-red-100 text-red-800 border border-red-200'
-              }`}>
-                {editedCollection.status}
-              </span>
+              <div className="flex flex-col items-end space-y-2">
+                <span className={`px-3 py-1 rounded-full text-sm font-medium ${
+                  editedCollection.status === 'Active' 
+                    ? 'bg-green-100 text-green-800 border border-green-200' 
+                    : 'bg-red-100 text-red-800 border border-red-200'
+                }`}>
+                  {editedCollection.status}
+                </span>
+                {isEditing ? (
+                  <select
+                    value={editedCollection.level}
+                    onChange={(e) => handleInputChange('level', e.target.value)}
+                    className="px-3 py-1 rounded-full text-sm font-medium border focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  >
+                    <option value="Beginner">Beginner</option>
+                    <option value="Intermediate">Intermediate</option>
+                    <option value="Advanced">Advanced</option>
+                  </select>
+                ) : (
+                  <span className={`px-3 py-1 rounded-full text-sm font-medium ${
+                    levelConfig[editedCollection.level].bgColor
+                  } ${levelConfig[editedCollection.level].textColor} ${
+                    levelConfig[editedCollection.level].borderColor
+                  }`}>
+                    {levelConfig[editedCollection.level].icon} {editedCollection.level}
+                  </span>
+                )}
+              </div>
             </div>
           </div>
 
@@ -304,6 +333,33 @@ function AdminDetails() {
                 label="Uploaded File" 
                 value={editedCollection.fileName} 
                 color="purple" 
+              />
+
+              <ColorDetailItem 
+                icon={Star} 
+                label="Interview Level" 
+                value={
+                  isEditing ? (
+                    <select
+                      value={editedCollection.level}
+                      onChange={(e) => handleInputChange('level', e.target.value)}
+                      className="w-full px-2 py-1 border border-slate-300 rounded text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    >
+                      <option value="Beginner">Beginner</option>
+                      <option value="Intermediate">Intermediate</option>
+                      <option value="Advanced">Advanced</option>
+                    </select>
+                  ) : (
+                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                      levelConfig[editedCollection.level].bgColor
+                    } ${levelConfig[editedCollection.level].textColor} ${
+                      levelConfig[editedCollection.level].borderColor
+                    }`}>
+                      {levelConfig[editedCollection.level].icon} {editedCollection.level}
+                    </span>
+                  )
+                } 
+                color="yellow" 
               />
             </div>
 
