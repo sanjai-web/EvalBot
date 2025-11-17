@@ -214,6 +214,227 @@ const FullscreenExitModal = ({ onStayFullscreen, onEndInterview }) => {
   );
 };
 
+// Code Editor Component with IDE-like interface
+const CodeEditor = ({ 
+  code, 
+  onCodeChange, 
+  selectedLanguage, 
+  onLanguageChange, 
+  onRunCode, 
+  output, 
+  isRunning,
+  onSubmitCode,
+  onSkipQuestion
+}) => {
+  const textareaRef = useRef(null);
+  const lineNumbersRef = useRef(null);
+  const codeContainerRef = useRef(null);
+
+  const languages = [
+    { value: 'python', label: 'Python' },
+    { value: 'java', label: 'Java' },
+    { value: 'cpp', label: 'C++' },
+    { value: 'c', label: 'C' },
+    { value: 'javascript', label: 'JavaScript' }
+  ];
+
+  const handleCodeChange = (e) => {
+    onCodeChange(e.target.value);
+  };
+
+  // Update line numbers whenever code changes
+  useEffect(() => {
+    updateLineNumbers();
+  }, [code]);
+
+  const updateLineNumbers = () => {
+    if (lineNumbersRef.current && textareaRef.current) {
+      const lineCount = code.split('\n').length || 1;
+      let numbersHTML = '';
+      
+      for (let i = 1; i <= lineCount; i++) {
+        numbersHTML += `${i}\n`;
+      }
+      
+      lineNumbersRef.current.innerHTML = numbersHTML;
+      
+      // Sync scroll positions
+      if (codeContainerRef.current) {
+        codeContainerRef.current.scrollTop = textareaRef.current.scrollTop;
+      }
+    }
+  };
+
+  const handleKeyDown = (e) => {
+    if (e.key === 'Tab') {
+      e.preventDefault();
+      const start = e.target.selectionStart;
+      const end = e.target.selectionEnd;
+      const newCode = code.substring(0, start) + '  ' + code.substring(end);
+      onCodeChange(newCode);
+      
+      // Set cursor position after the inserted tabs
+      setTimeout(() => {
+        textareaRef.current.selectionStart = textareaRef.current.selectionEnd = start + 2;
+      }, 0);
+    }
+  };
+
+  const handleScroll = () => {
+    if (codeContainerRef.current && textareaRef.current) {
+      codeContainerRef.current.scrollTop = textareaRef.current.scrollTop;
+    }
+  };
+
+  return (
+    <div className="flex flex-col h-full bg-gray-900 rounded-lg border border-gray-700 overflow-hidden">
+      {/* Editor Header */}
+      <div className="bg-gray-800 px-4 py-2 border-b border-gray-700 flex items-center justify-between flex-shrink-0">
+        <div className="flex items-center space-x-4">
+          <span className="text-sm font-medium text-gray-300">Code Editor</span>
+          <div className="flex items-center space-x-2">
+            <span className="text-xs text-gray-400">Language:</span>
+            <select
+              value={selectedLanguage}
+              onChange={(e) => onLanguageChange(e.target.value)}
+              className="bg-gray-700 border border-gray-600 rounded px-2 py-1 text-xs text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              {languages.map(lang => (
+                <option key={lang.value} value={lang.value}>{lang.label}</option>
+              ))}
+            </select>
+          </div>
+        </div>
+        <div className="flex items-center space-x-2">
+          <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+          <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
+          <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+        </div>
+      </div>
+
+      {/* Editor Body - Fixed height for ~10 lines, scrollable beyond */}
+      <div className="flex overflow-hidden bg-gray-900" style={{ height: '240px' }}>
+        {/* Line Numbers Container - Scrollable */}
+        <div 
+          ref={codeContainerRef}
+          className="bg-gray-800 border-r border-gray-700 overflow-y-auto overflow-x-hidden scrollbar-thin scrollbar-thumb-gray-600 scrollbar-track-gray-800"
+          style={{ 
+            minWidth: '60px', 
+            maxWidth: '60px',
+            scrollbarWidth: 'thin'
+          }}
+        >
+          <div 
+            ref={lineNumbersRef}
+            className="text-gray-500 text-right py-2 px-3 font-mono text-sm select-none whitespace-pre leading-6"
+          >
+            1
+          </div>
+        </div>
+        
+        {/* Code Textarea Container - Scrollable */}
+        <div className="flex-1 relative overflow-hidden">
+          <textarea
+            ref={textareaRef}
+            value={code}
+            onChange={handleCodeChange}
+            onKeyDown={handleKeyDown}
+            onScroll={handleScroll}
+            className="w-full h-full bg-gray-900 text-gray-100 font-mono text-sm p-2 pl-4 resize-none outline-none leading-6 overflow-auto"
+            spellCheck="false"
+            placeholder="// Write your code here..."
+            style={{ 
+              border: 'none',
+              scrollbarWidth: 'thin',
+              scrollbarColor: '#4B5563 #1F2937'
+            }}
+          />
+        </div>
+      </div>
+
+      {/* Output Panel - Scrollable */}
+      <div className="border-t border-gray-700 flex flex-col flex-shrink-0" style={{ height: '120px' }}>
+        <div className="bg-gray-800 px-4 py-2 border-b border-gray-700 flex-shrink-0">
+          <span className="text-sm font-medium text-gray-300">Output</span>
+        </div>
+        <div 
+          className="flex-1 p-3 bg-black overflow-y-auto overflow-x-auto scrollbar-thin scrollbar-thumb-gray-600 scrollbar-track-gray-900"
+          style={{
+            maxHeight: '88px', // Approximately 4 lines of text
+            minHeight: '88px'
+          }}
+        >
+          {isRunning ? (
+            <div className="flex items-center space-x-2 text-blue-400">
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-400"></div>
+              <span className="text-sm">Running code...</span>
+            </div>
+          ) : output ? (
+            <pre className="text-green-400 font-mono text-sm whitespace-pre-wrap break-words">{output}</pre>
+          ) : (
+            <div className="text-gray-500 text-sm">// Output will appear here after running your code</div>
+          )}
+        </div>
+      </div>
+
+      {/* Action Buttons */}
+      <div className="bg-gray-800 px-4 py-3 border-t border-gray-700 flex justify-between items-center flex-shrink-0">
+        <div className="flex space-x-2">
+          <button
+            onClick={onRunCode}
+            disabled={isRunning || !code.trim()}
+            className={`px-4 py-2 rounded text-sm font-medium transition-all flex items-center space-x-2 ${
+              isRunning || !code.trim()
+                ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
+                : 'bg-blue-600 hover:bg-blue-700 text-white shadow-lg hover:shadow-blue-500/25'
+            }`}
+          >
+            {isRunning ? (
+              <>
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                <span>Running...</span>
+              </>
+            ) : (
+              <>
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span>Run Code</span>
+              </>
+            )}
+          </button>
+          
+          <button
+            onClick={onSkipQuestion}
+            className="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded text-sm font-medium transition-all flex items-center space-x-2 shadow-lg hover:shadow-gray-500/25"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 5l7 7-7 7M5 5l7 7-7 7" />
+            </svg>
+            <span>Skip Question</span>
+          </button>
+        </div>
+        
+        <button
+          onClick={onSubmitCode}
+          disabled={!code.trim()}
+          className={`px-6 py-2 rounded font-medium transition-all flex items-center space-x-2 ${
+            !code.trim()
+              ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
+              : 'bg-green-600 hover:bg-green-700 text-white shadow-lg hover:shadow-green-500/25'
+          }`}
+        >
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+          </svg>
+          <span>Submit Code</span>
+        </button>
+      </div>
+    </div>
+  );
+};
+
 // Main Interview Component
 const Interview = () => {
   const location = useLocation();
@@ -250,6 +471,13 @@ const Interview = () => {
   const [fullscreenInitialized, setFullscreenInitialized] = useState(false);
   const [micPermissionGranted, setMicPermissionGranted] = useState(false);
   
+  // Code Editor States
+  const [code, setCode] = useState("");
+  const [selectedLanguage, setSelectedLanguage] = useState("python");
+  const [codeOutput, setCodeOutput] = useState("");
+  const [isRunningCode, setIsRunningCode] = useState(false);
+  const [isCodingQuestion, setIsCodingQuestion] = useState(false);
+  
   const timerRef = useRef(null);
   const containerRef = useRef(null);
   const videoRef = useRef(null);
@@ -259,7 +487,7 @@ const Interview = () => {
   const isRecognitionActive = useRef(false);
   const restartAttempts = useRef(0);
   const maxRestartAttempts = 3;
-  const finalTranscriptAccumulator = useRef(''); // FIXED: Changed to ref so it persists but can be reset
+  const finalTranscriptAccumulator = useRef('');
 
   const GEMINI_API_KEY = 'AIzaSyAROwOdL1mFBZTqOb81hl6prgv3Jqpvgzk';
   const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent';
@@ -281,6 +509,22 @@ const Interview = () => {
     }
   }, []);
 
+  // Check if current question is a coding question
+  useEffect(() => {
+    const codingCategories = ['Problem Solving', 'Database', 'Coding'];
+    const isCoding = codingCategories.some(cat => 
+      currentCategory.toLowerCase().includes(cat.toLowerCase())
+    );
+    setIsCodingQuestion(isCoding);
+    
+    // Reset code editor when switching to coding question
+    if (isCoding) {
+      setCode("");
+      setCodeOutput("");
+      setAnswer(""); // Clear text answer
+    }
+  }, [currentCategory]);
+
   // Request microphone permission explicitly
   const requestMicrophonePermission = async () => {
     try {
@@ -297,7 +541,7 @@ const Interview = () => {
     }
   };
 
-  // FIXED: Reset speech transcript
+  // Reset speech transcript
   const resetSpeechTranscript = () => {
     finalTranscriptAccumulator.current = '';
     setSpeechToText("");
@@ -347,7 +591,7 @@ const Interview = () => {
         }
 
         if (finalTranscript) {
-          finalTranscriptAccumulator.current += finalTranscript; // FIXED: Use ref
+          finalTranscriptAccumulator.current += finalTranscript;
         }
 
         setSpeechToText(() => {
@@ -455,7 +699,7 @@ const Interview = () => {
         codingCount = '2';
         difficultyGuidance = `DIFFICULTY LEVEL: BEGINNER
 - Focus on fundamental concepts and basic understanding
-- Ask about definitions, simple explanations, and basic syntax
+- Ask about definitions, simple explanations and basic syntax
 - Coding problems should be simple (easy level on LeetCode)
 - Core CS questions should cover basic concepts only
 - Avoid complex scenarios or advanced topics
@@ -698,7 +942,7 @@ Question Asked: ${question}
 
 Candidate's Answer: ${answer}
 
-${category === "Problem Solving" || category.toLowerCase().includes('problem') ? "NOTE: The candidate can solve coding problems in ANY programming language (C, C++, Java, Python, JavaScript, etc.). Evaluate based on logic, correctness, and efficiency regardless of language choice.\n\n" : ""}
+${category === "Problem Solving" || category.toLowerCase().includes('problem') || category.toLowerCase().includes('database') ? "NOTE: The candidate can solve coding problems in ANY programming language (C, C++, Java, Python, JavaScript, etc.). Evaluate based on logic, correctness, and efficiency regardless of language choice.\n\n" : ""}
 
 Provide a brief evaluation (3-4 sentences) that includes:
 1. What was good about the answer
@@ -800,6 +1044,104 @@ Keep it constructive, professional, and encouraging.`;
       };
       setConversationHistory(prev => [...prev, newEntry]);
       return newEntry;
+    }
+  };
+
+  // Run code using Gemini API
+  const runCode = async () => {
+    if (!code.trim()) {
+      setCodeOutput("Please write some code before running.");
+      return;
+    }
+
+    setIsRunningCode(true);
+    setCodeOutput("");
+
+    try {
+      const prompt = `You are a code interpreter. Execute the following ${selectedLanguage} code and provide ONLY the output. If there are errors, provide the error message.
+
+Code:
+\`\`\`${selectedLanguage}
+${code}
+\`\`\`
+
+Provide ONLY the output or error message, nothing else.`;
+
+      const response = await fetch(`${GEMINI_API_URL}?key=${GEMINI_API_KEY}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          contents: [{
+            parts: [{
+              text: prompt
+            }]
+          }]
+        })
+      });
+
+      const data = await response.json();
+      
+      if (data.candidates && data.candidates[0].content.parts[0].text) {
+        const output = data.candidates[0].content.parts[0].text;
+        setCodeOutput(output);
+      } else {
+        setCodeOutput("No output received from code execution.");
+      }
+    } catch (error) {
+      console.error('Error running code:', error);
+      setCodeOutput("Error running code. Please try again.");
+    } finally {
+      setIsRunningCode(false);
+    }
+  };
+
+  // Submit code for evaluation
+  const submitCode = async () => {
+    if (!code.trim()) {
+      alert('Please write some code before submitting.');
+      return;
+    }
+
+    const codeAnswer = `Code Solution (${selectedLanguage}):\n\n${code}\n\n${codeOutput ? `Output:\n${codeOutput}` : 'No output generated'}`;
+    
+    await handleSubmitAnswer(codeAnswer);
+  };
+
+  // Skip to next question
+  const skipQuestion = () => {
+    if (recognitionRef.current && candidateSpeaking) {
+      try {
+        recognitionRef.current.stop();
+      } catch (error) {
+        console.error('Error stopping recognition:', error);
+      }
+    }
+    setCandidateSpeaking(false);
+    resetSpeechTranscript();
+    
+    moveToNextQuestion();
+  };
+
+  const moveToNextQuestion = () => {
+    setAwaitingFollowUp(false);
+    setFollowUpContext("");
+
+    if (questionNumber < questions.length) {
+      const nextIndex = questionNumber;
+      setQuestionNumber(questionNumber + 1);
+      setCurrentQuestion(questions[nextIndex].question);
+      setCurrentCategory(questions[nextIndex].category);
+      setAnswer("");
+      setSpeechToText("");
+      setEvaluation("");
+      setCode("");
+      setCodeOutput("");
+      
+      if (questions[nextIndex].category === "Closing") {
+        setShowEndInterviewButton(false);
+      }
     }
   };
 
@@ -997,7 +1339,7 @@ Keep it constructive, professional, and encouraging.`;
 
   const toggleVoiceRecognition = async () => {
     if (!isSpeechSupported) {
-      setSpeechToText(speechError || 'Speech recognition is not supported in your browser. Please use Chrome or Edge.');
+      alert(speechError || 'Speech recognition is not supported in your browser. Please use Chrome or Edge.');
       return;
     }
 
@@ -1011,8 +1353,7 @@ Keep it constructive, professional, and encouraging.`;
     if (!candidateSpeaking) {
       // Start listening
       setCandidateSpeaking(true);
-      resetSpeechTranscript(); // FIXED: Reset transcript when starting new recording
-      setSpeechToText("Listening... Speak now!");
+      resetSpeechTranscript();
       setSpeechError("");
       restartAttempts.current = 0;
       
@@ -1055,8 +1396,8 @@ Keep it constructive, professional, and encouraging.`;
     }
   };
 
-  const handleSubmitAnswer = async () => {
-    const finalAnswer = answer.trim() || speechToText.replace(/\[.*?\]/g, '').trim();
+  const handleSubmitAnswer = async (customAnswer = null) => {
+    const finalAnswer = customAnswer || answer.trim();
     
     if (!finalAnswer) {
       alert('Please provide an answer before submitting.');
@@ -1073,7 +1414,7 @@ Keep it constructive, professional, and encouraging.`;
       }
     }
     setCandidateSpeaking(false);
-    resetSpeechTranscript(); // FIXED: Reset transcript after submission
+    resetSpeechTranscript();
     
     const isClosingQuestion = currentCategory === "Closing";
     
@@ -1103,6 +1444,8 @@ Keep it constructive, professional, and encouraging.`;
           setAnswer("");
           setSpeechToText("");
           setEvaluation("");
+          setCode("");
+          setCodeOutput("");
           setAwaitingFollowUp(true);
           return;
         }
@@ -1119,6 +1462,8 @@ Keep it constructive, professional, and encouraging.`;
         setAnswer("");
         setSpeechToText("");
         setEvaluation("");
+        setCode("");
+        setCodeOutput("");
         
         if (questions[nextIndex].category === "Closing") {
           setShowEndInterviewButton(false);
@@ -1186,8 +1531,8 @@ Keep it constructive, professional, and encouraging.`;
   useEffect(() => {
     const handleKeyPress = (event) => {
       if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') {
-        const finalAnswer = answer.trim() || speechToText.replace(/\[.*?\]/g, '').trim();
-        if (finalAnswer) {
+        const finalAnswer = answer.trim();
+        if (finalAnswer && !isCodingQuestion) {
           handleSubmitAnswer();
         }
       }
@@ -1197,8 +1542,166 @@ Keep it constructive, professional, and encouraging.`;
     return () => {
       document.removeEventListener('keydown', handleKeyPress);
     };
-  }, [answer, speechToText, questionNumber]);
+  }, [answer, speechToText, questionNumber, isCodingQuestion]);
 
+// TextAnswerArea Component - COMPLETELY FIXED VERSION
+const TextAnswerArea = () => {
+  const textareaRef = useRef(null);
+
+  // Focus the textarea when component mounts
+  useEffect(() => {
+    if (textareaRef.current) {
+      textareaRef.current.focus();
+    }
+  }, []);
+
+  return (
+    <div className="flex-1 bg-black/30 backdrop-blur-sm rounded-2xl border border-gray-500/30 p-4 flex flex-col">
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center space-x-2">
+          <h3 className="font-semibold text-gray-300">Your Answer</h3>
+          {currentCategory === "Closing" && (
+            <span className="text-xs bg-green-500/20 px-3 py-1 rounded-full border border-green-500/30 text-green-300">
+              Closing Section - Ask your questions!
+            </span>
+          )}
+          {candidateSpeaking && (
+            <div className="flex items-center space-x-1">
+              <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+              <span className="text-xs text-green-400">Listening</span>
+            </div>
+          )}
+          {!isSpeechSupported && (
+            <span className="text-xs text-red-400 ml-2">(Not supported)</span>
+          )}
+          {!micPermissionGranted && isSpeechSupported && (
+            <span className="text-xs text-yellow-400 ml-2">(Mic permission required)</span>
+          )}
+        </div>
+        <div className="text-xs text-gray-400">
+          {answer.length} characters
+        </div>
+      </div>
+
+      {/* Speech Error Display */}
+      {speechError && (
+        <div className="mb-3 p-3 bg-red-500/20 border border-red-500/30 rounded-lg">
+          <p className="text-sm text-red-300 font-medium">
+            ⚠️ {speechError}
+          </p>
+        </div>
+      )}
+
+      {/* Speech Recognition Status */}
+      {candidateSpeaking && speechToText && (
+        <div className="mb-3 p-3 bg-green-500/20 border border-green-500/30 rounded-lg">
+          <div className="flex items-center space-x-2 mb-2">
+            <div className="flex space-x-1">
+              <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+              <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse delay-75"></div>
+              <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse delay-150"></div>
+            </div>
+            <span className="text-sm text-green-300 font-medium">Listening...</span>
+          </div>
+          <p className="text-sm text-gray-300 whitespace-pre-wrap">
+            {speechToText}
+          </p>
+          {speechToText.includes('[') && (
+            <p className="text-xs text-green-400 mt-1">
+              Words in brackets are being processed in real-time...
+            </p>
+          )}
+        </div>
+      )}
+
+      {/* Textarea Container */}
+      <div className="flex-1 min-h-0 mb-4">
+        <textarea
+          ref={textareaRef}
+          value={answer}
+          onChange={(e) => setAnswer(e.target.value)}
+          placeholder="Type your answer here. You can also use voice input by clicking the microphone button below."
+          className="w-full h-full bg-black/50 text-white p-4 rounded-xl border border-white/10 focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 resize-none font-mono text-sm focus:outline-none"
+          style={{ 
+            minHeight: '200px'
+          }}
+          onFocus={(e) => {
+            // Ensure the textarea stays focused when clicked
+            e.target.select();
+          }}
+        />
+      </div>
+
+      {/* Microphone Button - COMPLETELY SEPARATED from textarea */}
+      <div className="flex items-center justify-between mb-4 p-3 bg-black/30 rounded-lg border border-gray-600/30">
+        <div className="flex items-center space-x-2">
+          <span className="text-sm text-gray-300">Voice Input:</span>
+          <button
+            onClick={toggleVoiceRecognition}
+            disabled={!isSpeechSupported}
+            className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${
+              candidateSpeaking 
+                ? 'bg-red-500/80 border border-red-500 text-white shadow-lg' 
+                : isSpeechSupported
+                ? 'bg-green-500/80 border border-green-500 text-white hover:bg-green-600 shadow-lg hover:scale-105'
+                : 'bg-gray-500/80 border border-gray-500 text-gray-300 cursor-not-allowed'
+            }`}
+          >
+            {candidateSpeaking ? 
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 10a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z" />
+              </svg>
+              :
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+              </svg>
+            }
+          </button>
+          <span className="text-xs text-gray-400 ml-2">
+            {candidateSpeaking ? 'Click to stop recording' : 'Click to start voice input'}
+          </span>
+        </div>
+        
+        <div className="text-xs text-gray-400">
+          Press <kbd className="px-2 py-1 bg-black/50 rounded text-xs">Ctrl+Enter</kbd> to submit
+        </div>
+      </div>
+      
+      <div className="flex justify-between items-center">
+        <div className="flex space-x-3">
+          <button
+            onClick={skipQuestion}
+            className="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded text-sm font-medium transition-all"
+          >
+            Skip Question
+          </button>
+          
+          {showEndInterviewButton && currentCategory === "Closing" && (
+            <button 
+              onClick={handleEndInterview}
+              className="px-6 py-2 rounded-lg font-medium transition-all bg-gradient-to-r from-red-600 to-orange-600 hover:from-red-700 hover:to-orange-700 shadow-lg"
+            >
+              🏁 End Interview
+            </button>
+          )}
+        </div>
+        
+        <button 
+          onClick={() => handleSubmitAnswer()}
+          disabled={!answer.trim()}
+          className={`px-6 py-2 rounded-lg font-medium transition-all ${
+            answer.trim()
+              ? 'bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 shadow-lg' 
+              : 'bg-gray-700 cursor-not-allowed opacity-50'
+          }`}
+        >
+          {currentCategory === "Closing" ? 'Submit & Continue →' : questionNumber < questions.length ? 'Submit Answer →' : 'Submit Answer →'}
+        </button>
+      </div>
+    </div>
+  );
+};
   return (
     <div 
       ref={containerRef}
@@ -1214,7 +1717,7 @@ Keep it constructive, professional, and encouraging.`;
       <div className="bg-black/40 backdrop-blur-md border-b border-white/10 px-6 py-3 flex items-center justify-between">
         <div className="flex items-center space-x-4">
           <div className="text-xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
-            AI Interview Platform
+            Eval-Bot
           </div>
           <div className="text-sm text-gray-400">
             {interviewData ? `${interviewData.jobName} at ${interviewData.companyName}` : 'Interview Session'}
@@ -1230,6 +1733,11 @@ Keep it constructive, professional, and encouraging.`;
           {awaitingFollowUp && (
             <div className="text-xs bg-orange-500/20 px-3 py-1 rounded-full border border-orange-500/30">
               Follow-up Question
+            </div>
+          )}
+          {isCodingQuestion && (
+            <div className="text-xs bg-blue-500/20 px-3 py-1 rounded-full border border-blue-500/30">
+              Coding Question
             </div>
           )}
         </div>
@@ -1342,6 +1850,11 @@ Keep it constructive, professional, and encouraging.`;
                       Follow-up
                     </span>
                   )}
+                  {isCodingQuestion && (
+                    <span className="text-xs bg-blue-600/30 px-2 py-1 rounded-full">
+                      Coding Question
+                    </span>
+                  )}
                   {aiSpeaking && (
                     <div className="flex items-center space-x-1">
                       <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
@@ -1371,114 +1884,24 @@ Keep it constructive, professional, and encouraging.`;
             </div>
           </div>
 
-          <div className="bg-green-500/10 backdrop-blur-sm rounded-2xl border border-green-500/30 p-4">
-            <div className="flex items-center justify-between mb-2">
-              <div className="flex items-center space-x-2">
-                <svg className="w-5 h-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
-                </svg>
-                <h3 className="font-semibold text-green-300">Speech to Text</h3>
-                {candidateSpeaking && (
-                  <div className="flex items-center space-x-1">
-                    <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-                    <span className="text-xs text-green-400">Listening</span>
-                  </div>
-                )}
-                {!isSpeechSupported && (
-                  <span className="text-xs text-red-400 ml-2">(Not supported)</span>
-                )}
-                {!micPermissionGranted && isSpeechSupported && (
-                  <span className="text-xs text-yellow-400 ml-2">(Mic permission required)</span>
-                )}
-              </div>
-              
-              <button
-                onClick={toggleVoiceRecognition}
-                disabled={!isSpeechSupported}
-                className={`px-4 py-1 rounded-lg text-sm transition-all ${
-                  candidateSpeaking 
-                    ? 'bg-red-500/20 border border-red-500/30 text-red-300' 
-                    : isSpeechSupported
-                    ? 'bg-green-500/20 border border-green-500/30 text-green-300 hover:bg-green-500/30'
-                    : 'bg-gray-500/20 border border-gray-500/30 text-gray-400 cursor-not-allowed'
-                }`}
-              >
-                {candidateSpeaking ? '⏸ Stop' : '🎤 Speak'}
-              </button>
+          {/* Dynamic Answer Container */}
+          {isCodingQuestion ? (
+            <div className="flex-1">
+              <CodeEditor
+                code={code}
+                onCodeChange={setCode}
+                selectedLanguage={selectedLanguage}
+                onLanguageChange={setSelectedLanguage}
+                onRunCode={runCode}
+                output={codeOutput}
+                isRunning={isRunningCode}
+                onSubmitCode={submitCode}
+                onSkipQuestion={skipQuestion}
+              />
             </div>
-            
-            <div className="bg-black/30 rounded-lg p-3 min-h-16 max-h-32 overflow-y-auto">
-              {speechError && (
-                <p className="text-sm text-red-400 mb-2 font-semibold">
-                  ⚠️ {speechError}
-                </p>
-              )}
-              <p className="text-sm text-gray-300 whitespace-pre-wrap">
-                {speechToText || (isSpeechSupported 
-                  ? (micPermissionGranted 
-                    ? "Click the microphone button to start speaking your answer..." 
-                    : "Click the microphone button to grant permission and start speaking...")
-                  : "Speech recognition not supported. Please use Chrome, Edge, or Safari on HTTPS.")}
-              </p>
-              {speechToText.includes('[') && (
-                <p className="text-xs text-green-400 mt-1">
-                  Words in brackets are being processed in real-time...
-                </p>
-              )}
-            </div>
-          </div>
-
-          <div className="flex-1 bg-black/30 backdrop-blur-sm rounded-2xl border border-gray-500/30 p-4 flex flex-col">
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center space-x-2">
-                <h3 className="font-semibold text-gray-300">Your Written Answer</h3>
-                {currentCategory === "Closing" && (
-                  <span className="text-xs bg-green-500/20 px-3 py-1 rounded-full border border-green-500/30 text-green-300">
-                    Closing Section - Ask your questions!
-                  </span>
-                )}
-              </div>
-              <div className="text-xs text-gray-400">
-                {answer.length} characters
-              </div>
-            </div>
-            
-            <textarea
-              value={answer}
-              onChange={(e) => setAnswer(e.target.value)}
-              placeholder="Type your answer here. For coding problems, you can use ANY language (C, C++, Java, Python, JavaScript, etc.). You can also use voice input above..."
-              className="flex-1 w-full bg-black/50 text-white p-4 rounded-xl border border-white/10 focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 resize-none font-mono text-sm"
-            />
-            
-            <div className="flex justify-between items-center mt-4">
-              <div className="text-xs text-gray-400">
-                Press <kbd className="px-2 py-1 bg-black/50 rounded text-xs">Ctrl+Enter</kbd> to submit
-              </div>
-              
-              <div className="flex space-x-3">
-                {showEndInterviewButton && currentCategory === "Closing" && (
-                  <button 
-                    onClick={handleEndInterview}
-                    className="px-6 py-2 rounded-lg font-medium transition-all bg-gradient-to-r from-red-600 to-orange-600 hover:from-red-700 hover:to-orange-700 shadow-lg"
-                  >
-                    🏁 End Interview
-                  </button>
-                )}
-                
-                <button 
-                  onClick={handleSubmitAnswer}
-                  disabled={!answer.trim() && !speechToText.replace(/\[.*?\]/g, '').trim()}
-                  className={`px-6 py-2 rounded-lg font-medium transition-all ${
-                    (answer.trim() || speechToText.replace(/\[.*?\]/g, '').trim()) 
-                      ? 'bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 shadow-lg' 
-                      : 'bg-gray-700 cursor-not-allowed opacity-50'
-                  }`}
-                >
-                  {currentCategory === "Closing" ? 'Submit & Continue →' : questionNumber < questions.length ? 'Submit Answer →' : 'Submit Answer →'}
-                </button>
-              </div>
-            </div>
-          </div>
+          ) : (
+            <TextAnswerArea />
+          )}
         </div>
       </div>
     </div>
