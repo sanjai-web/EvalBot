@@ -173,47 +173,6 @@ const Scene = ({ isSpeaking }) => {
   );
 };
 
-// Fullscreen Exit Modal Component
-const FullscreenExitModal = ({ onStayFullscreen, onEndInterview }) => {
-  return (
-    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center">
-      <div className="bg-gradient-to-br from-slate-800 to-slate-900 border-2 border-purple-500/50 rounded-2xl p-8 max-w-md mx-4 shadow-2xl">
-        <div className="text-center mb-6">
-          <div className="w-16 h-16 bg-yellow-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
-            <svg className="w-8 h-8 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-            </svg>
-          </div>
-          <h2 className="text-2xl font-bold text-white mb-2">Fullscreen Exited</h2>
-          <p className="text-gray-300">
-            The interview requires fullscreen mode for the best experience and to ensure proper proctoring.
-          </p>
-        </div>
-        
-        <div className="space-y-3">
-          <button
-            onClick={onStayFullscreen}
-            className="w-full px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-semibold rounded-lg transition-all shadow-lg"
-          >
-            Return to Fullscreen
-          </button>
-          
-          <button
-            onClick={onEndInterview}
-            className="w-full px-6 py-3 bg-red-600/20 hover:bg-red-600/30 border border-red-500/50 text-red-300 font-semibold rounded-lg transition-all"
-          >
-            End Interview
-          </button>
-        </div>
-        
-        <p className="text-xs text-gray-400 text-center mt-4">
-          Note: Exiting fullscreen multiple times may affect your interview evaluation.
-        </p>
-      </div>
-    </div>
-  );
-};
-
 // Code Editor Component with IDE-like interface
 const CodeEditor = ({ 
   code, 
@@ -352,84 +311,125 @@ const CodeEditor = ({
         </div>
       </div>
 
-      {/* Output Panel - Scrollable */}
-      <div className="border-t border-gray-700 flex flex-col flex-shrink-0" style={{ height: '120px' }}>
-        <div className="bg-gray-800 px-4 py-2 border-b border-gray-700 flex-shrink-0">
-          <span className="text-sm font-medium text-gray-300">Output</span>
-        </div>
-        <div 
-          className="flex-1 p-3 bg-black overflow-y-auto overflow-x-auto scrollbar-thin scrollbar-thumb-gray-600 scrollbar-track-gray-900"
-          style={{
-            maxHeight: '88px', // Approximately 4 lines of text
-            minHeight: '88px'
-          }}
-        >
-          {isRunning ? (
-            <div className="flex items-center space-x-2 text-blue-400">
-              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-400"></div>
-              <span className="text-sm">Running code...</span>
-            </div>
-          ) : output ? (
-            <pre className="text-green-400 font-mono text-sm whitespace-pre-wrap break-words">{output}</pre>
-          ) : (
-            <div className="text-gray-500 text-sm">// Output will appear here after running your code</div>
-          )}
-        </div>
+   {/* Output Panel - Scrollable */}
+<div className="border-t border-gray-700 flex flex-col flex-shrink-0" style={{ height: '200px' }}>
+  <div className="bg-gray-800 px-4 py-2 border-b border-gray-700 flex-shrink-0">
+    <span className="text-sm font-medium text-gray-300">Output</span>
+  </div>
+  <div 
+    className="flex-1 p-3 bg-black overflow-y-auto overflow-x-auto scrollbar-thin scrollbar-thumb-gray-600 scrollbar-track-gray-900"
+    style={{
+      maxHeight: '180px',
+      minHeight: '180px'
+    }}
+  >
+    {isRunning ? (
+      <div className="flex items-center space-x-2 text-blue-400">
+        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-400"></div>
+        <span className="text-sm">Running code...</span>
       </div>
+    ) : output ? (
+      <pre className="text-green-400 font-mono text-sm whitespace-pre-wrap break-words">{output}</pre>
+    ) : (
+      <div className="text-gray-500 text-sm">// Output will appear here after running your code</div>
+    )}
+  </div>
+</div>
 
-      {/* Action Buttons */}
-      <div className="bg-gray-800 px-4 py-3 border-t border-gray-700 flex justify-between items-center flex-shrink-0">
-        <div className="flex space-x-2">
+{/* Action Buttons */}
+<div className="bg-gray-800 px-4 py-3 border-t border-gray-700 flex justify-between items-center flex-shrink-0">
+  <div className="flex space-x-2">
+    <button
+      onClick={onRunCode}
+      disabled={isRunning || !code.trim()}
+      className={`px-4 py-2 rounded text-sm font-medium transition-all flex items-center space-x-2 ${
+        isRunning || !code.trim()
+          ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
+          : 'bg-blue-600 hover:bg-blue-700 text-white shadow-lg hover:shadow-blue-500/25'
+      }`}
+    >
+      {isRunning ? (
+        <>
+          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+          <span>Running...</span>
+        </>
+      ) : (
+        <>
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <span>Run Code</span>
+        </>
+      )}
+    </button>
+    
+    <button
+      onClick={onSkipQuestion}
+      className="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded text-sm font-medium transition-all flex items-center space-x-2 shadow-lg hover:shadow-gray-500/25"
+    >
+      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 5l7 7-7 7M5 5l7 7-7 7" />
+      </svg>
+      <span>Skip Question</span>
+    </button>
+  </div>
+  
+  <button
+    onClick={onSubmitCode}
+    disabled={!code.trim()}
+    className={`px-6 py-2 rounded font-medium transition-all flex items-center space-x-2 ${
+      !code.trim()
+        ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
+        : 'bg-green-600 hover:bg-green-700 text-white shadow-lg hover:shadow-green-500/25'
+    }`}
+  >
+    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+    </svg>
+    <span>Submit Code</span>
+  </button>
+</div>
+    </div>
+  );
+};
+
+// Fullscreen Exit Modal Component
+const FullscreenExitModal = ({ onStayFullscreen, onEndInterview }) => {
+  return (
+    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center">
+      <div className="bg-gradient-to-br from-slate-800 to-slate-900 border-2 border-purple-500/50 rounded-2xl p-8 max-w-md mx-4 shadow-2xl">
+        <div className="text-center mb-6">
+          <div className="w-16 h-16 bg-yellow-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
+            <svg className="w-8 h-8 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+          </div>
+          <h2 className="text-2xl font-bold text-white mb-2">Fullscreen Exited</h2>
+          <p className="text-gray-300">
+            The interview requires fullscreen mode for the best experience and to ensure proper proctoring.
+          </p>
+        </div>
+        
+        <div className="space-y-3">
           <button
-            onClick={onRunCode}
-            disabled={isRunning || !code.trim()}
-            className={`px-4 py-2 rounded text-sm font-medium transition-all flex items-center space-x-2 ${
-              isRunning || !code.trim()
-                ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
-                : 'bg-blue-600 hover:bg-blue-700 text-white shadow-lg hover:shadow-blue-500/25'
-            }`}
+            onClick={onStayFullscreen}
+            className="w-full px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-semibold rounded-lg transition-all shadow-lg"
           >
-            {isRunning ? (
-              <>
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                <span>Running...</span>
-              </>
-            ) : (
-              <>
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                <span>Run Code</span>
-              </>
-            )}
+            Return to Fullscreen
           </button>
           
           <button
-            onClick={onSkipQuestion}
-            className="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded text-sm font-medium transition-all flex items-center space-x-2 shadow-lg hover:shadow-gray-500/25"
+            onClick={onEndInterview}
+            className="w-full px-6 py-3 bg-red-600/20 hover:bg-red-600/30 border border-red-500/50 text-red-300 font-semibold rounded-lg transition-all"
           >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 5l7 7-7 7M5 5l7 7-7 7" />
-            </svg>
-            <span>Skip Question</span>
+            End Interview
           </button>
         </div>
         
-        <button
-          onClick={onSubmitCode}
-          disabled={!code.trim()}
-          className={`px-6 py-2 rounded font-medium transition-all flex items-center space-x-2 ${
-            !code.trim()
-              ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
-              : 'bg-green-600 hover:bg-green-700 text-white shadow-lg hover:shadow-green-500/25'
-          }`}
-        >
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-          </svg>
-          <span>Submit Code</span>
-        </button>
+        <p className="text-xs text-gray-400 text-center mt-4">
+          Note: Exiting fullscreen multiple times may affect your interview evaluation.
+        </p>
       </div>
     </div>
   );
@@ -472,11 +472,10 @@ const Interview = () => {
   const [micPermissionGranted, setMicPermissionGranted] = useState(false);
   
   // Code Editor States
-  const [code, setCode] = useState("");
-  const [selectedLanguage, setSelectedLanguage] = useState("python");
-  const [codeOutput, setCodeOutput] = useState("");
-  const [isRunningCode, setIsRunningCode] = useState(false);
-  const [isCodingQuestion, setIsCodingQuestion] = useState(false);
+  const [code, setCode] = useState('');
+  const [selectedLanguage, setSelectedLanguage] = useState('python');
+  const [output, setOutput] = useState('');
+  const [isRunning, setIsRunning] = useState(false);
   
   const timerRef = useRef(null);
   const containerRef = useRef(null);
@@ -491,6 +490,11 @@ const Interview = () => {
 
   const GEMINI_API_KEY = 'AIzaSyAROwOdL1mFBZTqOb81hl6prgv3Jqpvgzk';
   const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent';
+
+  // Check if current question is a coding question
+  const isCodingQuestion = currentCategory.toLowerCase().includes('problem') || 
+                          currentCategory.toLowerCase().includes('coding') ||
+                          currentCategory.toLowerCase().includes('database');
 
   // Check if site is served over HTTPS
   useEffect(() => {
@@ -508,22 +512,6 @@ const Interview = () => {
       setIsSpeechSupported(false);
     }
   }, []);
-
-  // Check if current question is a coding question
-  useEffect(() => {
-    const codingCategories = ['Problem Solving', 'Database', 'Coding'];
-    const isCoding = codingCategories.some(cat => 
-      currentCategory.toLowerCase().includes(cat.toLowerCase())
-    );
-    setIsCodingQuestion(isCoding);
-    
-    // Reset code editor when switching to coding question
-    if (isCoding) {
-      setCode("");
-      setCodeOutput("");
-      setAnswer(""); // Clear text answer
-    }
-  }, [currentCategory]);
 
   // Request microphone permission explicitly
   const requestMicrophonePermission = async () => {
@@ -699,7 +687,7 @@ const Interview = () => {
         codingCount = '2';
         difficultyGuidance = `DIFFICULTY LEVEL: BEGINNER
 - Focus on fundamental concepts and basic understanding
-- Ask about definitions, simple explanations and basic syntax
+- Ask about definitions, simple explanations, and basic syntax
 - Coding problems should be simple (easy level on LeetCode)
 - Core CS questions should cover basic concepts only
 - Avoid complex scenarios or advanced topics
@@ -942,7 +930,7 @@ Question Asked: ${question}
 
 Candidate's Answer: ${answer}
 
-${category === "Problem Solving" || category.toLowerCase().includes('problem') || category.toLowerCase().includes('database') ? "NOTE: The candidate can solve coding problems in ANY programming language (C, C++, Java, Python, JavaScript, etc.). Evaluate based on logic, correctness, and efficiency regardless of language choice.\n\n" : ""}
+${category === "Problem Solving" || category.toLowerCase().includes('problem') ? "NOTE: The candidate can solve coding problems in ANY programming language (C, C++, Java, Python, JavaScript, etc.). Evaluate based on logic, correctness, and efficiency regardless of language choice.\n\n" : ""}
 
 Provide a brief evaluation (3-4 sentences) that includes:
 1. What was good about the answer
@@ -1047,25 +1035,25 @@ Keep it constructive, professional, and encouraging.`;
     }
   };
 
-  // Run code using Gemini API
-  const runCode = async () => {
-    if (!code.trim()) {
-      setCodeOutput("Please write some code before running.");
-      return;
-    }
-
-    setIsRunningCode(true);
-    setCodeOutput("");
-
+  // Execute code using Gemini API
+  const executeCodeWithGemini = async (code, language) => {
     try {
-      const prompt = `You are a code interpreter. Execute the following ${selectedLanguage} code and provide ONLY the output. If there are errors, provide the error message.
+      const prompt = `You are a code execution engine. Execute the following ${language} code and provide ONLY the actual output that would be printed to the console. If there are any errors, provide the error message.
 
 Code:
-\`\`\`${selectedLanguage}
+\`\`\`${language}
 ${code}
 \`\`\`
 
-Provide ONLY the output or error message, nothing else.`;
+Rules:
+1. Only output the actual execution result or error message
+2. Do not include any explanations, comments, or additional text
+3. If the code has print/console.log statements, show exactly what would be printed
+4. If there are multiple outputs, show them in order
+5. If the code has no output, return "No output produced"
+6. If there are syntax errors, return the error message
+
+Output:`;
 
       const response = await fetch(`${GEMINI_API_URL}?key=${GEMINI_API_KEY}`, {
         method: 'POST',
@@ -1084,64 +1072,13 @@ Provide ONLY the output or error message, nothing else.`;
       const data = await response.json();
       
       if (data.candidates && data.candidates[0].content.parts[0].text) {
-        const output = data.candidates[0].content.parts[0].text;
-        setCodeOutput(output);
+        return data.candidates[0].content.parts[0].text.trim();
       } else {
-        setCodeOutput("No output received from code execution.");
+        return "Error: Unable to execute code";
       }
     } catch (error) {
-      console.error('Error running code:', error);
-      setCodeOutput("Error running code. Please try again.");
-    } finally {
-      setIsRunningCode(false);
-    }
-  };
-
-  // Submit code for evaluation
-  const submitCode = async () => {
-    if (!code.trim()) {
-      alert('Please write some code before submitting.');
-      return;
-    }
-
-    const codeAnswer = `Code Solution (${selectedLanguage}):\n\n${code}\n\n${codeOutput ? `Output:\n${codeOutput}` : 'No output generated'}`;
-    
-    await handleSubmitAnswer(codeAnswer);
-  };
-
-  // Skip to next question
-  const skipQuestion = () => {
-    if (recognitionRef.current && candidateSpeaking) {
-      try {
-        recognitionRef.current.stop();
-      } catch (error) {
-        console.error('Error stopping recognition:', error);
-      }
-    }
-    setCandidateSpeaking(false);
-    resetSpeechTranscript();
-    
-    moveToNextQuestion();
-  };
-
-  const moveToNextQuestion = () => {
-    setAwaitingFollowUp(false);
-    setFollowUpContext("");
-
-    if (questionNumber < questions.length) {
-      const nextIndex = questionNumber;
-      setQuestionNumber(questionNumber + 1);
-      setCurrentQuestion(questions[nextIndex].question);
-      setCurrentCategory(questions[nextIndex].category);
-      setAnswer("");
-      setSpeechToText("");
-      setEvaluation("");
-      setCode("");
-      setCodeOutput("");
-      
-      if (questions[nextIndex].category === "Closing") {
-        setShowEndInterviewButton(false);
-      }
+      console.error('Error executing code:', error);
+      return `Error executing code: ${error.message}`;
     }
   };
 
@@ -1396,8 +1333,162 @@ Provide ONLY the output or error message, nothing else.`;
     }
   };
 
-  const handleSubmitAnswer = async (customAnswer = null) => {
-    const finalAnswer = customAnswer || answer.trim();
+  // Handle Run Code for the Code Editor - Now using Gemini API
+  const handleRunCode = async () => {
+    if (!code.trim()) {
+      setOutput("Please write some code before running.");
+      return;
+    }
+
+    setIsRunning(true);
+    setOutput("Executing code...");
+
+    try {
+      const result = await executeCodeWithGemini(code, selectedLanguage);
+      setOutput(result);
+    } catch (error) {
+      setOutput(`Error: ${error.message}`);
+    } finally {
+      setIsRunning(false);
+    }
+  };
+
+  // Handle Code Submission
+  const handleSubmitCode = () => {
+    const finalAnswer = code.trim();
+    
+    if (!finalAnswer) {
+      alert('Please write some code before submitting.');
+      return;
+    }
+
+    console.log("Code submitted:", finalAnswer);
+    
+    // For coding questions, we use the code as the answer
+    handleSubmitAnswerWithCode(finalAnswer);
+  };
+
+  // Modified submit function for coding questions
+  const handleSubmitAnswerWithCode = async (codeAnswer) => {
+    const finalAnswer = codeAnswer;
+    
+    if (!finalAnswer) {
+      alert('Please provide an answer before submitting.');
+      return;
+    }
+
+    console.log("Answer submitted:", finalAnswer);
+    
+    if (recognitionRef.current && candidateSpeaking) {
+      try {
+        recognitionRef.current.stop();
+      } catch (error) {
+        console.error('Error stopping recognition:', error);
+      }
+    }
+    setCandidateSpeaking(false);
+    resetSpeechTranscript();
+    
+    const isClosingQuestion = currentCategory === "Closing";
+    
+    const result = await evaluateAnswer(currentQuestion, finalAnswer, currentCategory);
+    
+    setTimeout(() => {
+      if (isClosingQuestion) {
+        setAnswer("");
+        setSpeechToText("");
+        setCode("");
+        setShowEndInterviewButton(true);
+        
+        if (result && result.isCandidateQuestion && result.evaluation) {
+          console.log("Speaking AI response:", result.evaluation);
+          speakQuestion(result.evaluation);
+        }
+        return;
+      }
+      
+      if (result && !result.isCandidateQuestion) {
+        const evalText = result.evaluation;
+        const followUpMatch = evalText.match(/FOLLOW_UP:\s*(yes)/i);
+        const questionMatch = evalText.match(/QUESTION:\s*(.+?)(?:\n|$)/i);
+
+        if (followUpMatch && questionMatch && !awaitingFollowUp) {
+          const followUpQuestion = questionMatch[1].trim();
+          setCurrentQuestion(followUpQuestion);
+          setAnswer("");
+          setSpeechToText("");
+          setCode("");
+          setEvaluation("");
+          setAwaitingFollowUp(true);
+          return;
+        }
+      }
+
+      setAwaitingFollowUp(false);
+      setFollowUpContext("");
+
+      if (questionNumber < questions.length) {
+        const nextIndex = questionNumber;
+        setQuestionNumber(questionNumber + 1);
+        setCurrentQuestion(questions[nextIndex].question);
+        setCurrentCategory(questions[nextIndex].category);
+        setAnswer("");
+        setSpeechToText("");
+        setCode("");
+        setEvaluation("");
+        
+        if (questions[nextIndex].category === "Closing") {
+          setShowEndInterviewButton(false);
+        }
+      }
+    }, 1000);
+  };
+
+  // Skip question functionality
+  const handleSkipQuestion = () => {
+    if (recognitionRef.current && candidateSpeaking) {
+      try {
+        recognitionRef.current.stop();
+      } catch (error) {
+        console.error('Error stopping recognition:', error);
+      }
+    }
+    setCandidateSpeaking(false);
+    resetSpeechTranscript();
+    
+    // Add skipped question to conversation history
+    const skippedEntry = {
+      category: currentCategory,
+      question: currentQuestion,
+      answer: isCodingQuestion ? "[Code Skipped by candidate]" : "[Skipped by candidate]",
+      evaluation: "Question was skipped",
+      score: 0,
+      skipped: true
+    };
+    setConversationHistory(prev => [...prev, skippedEntry]);
+    
+    // Move to next question
+    setAwaitingFollowUp(false);
+    setFollowUpContext("");
+
+    if (questionNumber < questions.length) {
+      const nextIndex = questionNumber;
+      setQuestionNumber(questionNumber + 1);
+      setCurrentQuestion(questions[nextIndex].question);
+      setCurrentCategory(questions[nextIndex].category);
+      setAnswer("");
+      setSpeechToText("");
+      setCode("");
+      setEvaluation("");
+      
+      if (questions[nextIndex].category === "Closing") {
+        setShowEndInterviewButton(false);
+      }
+    }
+  };
+
+  const handleSubmitAnswer = async () => {
+    const finalAnswer = answer.trim();
     
     if (!finalAnswer) {
       alert('Please provide an answer before submitting.');
@@ -1444,8 +1535,6 @@ Provide ONLY the output or error message, nothing else.`;
           setAnswer("");
           setSpeechToText("");
           setEvaluation("");
-          setCode("");
-          setCodeOutput("");
           setAwaitingFollowUp(true);
           return;
         }
@@ -1462,8 +1551,6 @@ Provide ONLY the output or error message, nothing else.`;
         setAnswer("");
         setSpeechToText("");
         setEvaluation("");
-        setCode("");
-        setCodeOutput("");
         
         if (questions[nextIndex].category === "Closing") {
           setShowEndInterviewButton(false);
@@ -1531,9 +1618,16 @@ Provide ONLY the output or error message, nothing else.`;
   useEffect(() => {
     const handleKeyPress = (event) => {
       if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') {
-        const finalAnswer = answer.trim();
-        if (finalAnswer && !isCodingQuestion) {
-          handleSubmitAnswer();
+        if (isCodingQuestion) {
+          const finalCode = code.trim();
+          if (finalCode) {
+            handleSubmitCode();
+          }
+        } else {
+          const finalAnswer = answer.trim();
+          if (finalAnswer) {
+            handleSubmitAnswer();
+          }
         }
       }
     };
@@ -1542,166 +1636,8 @@ Provide ONLY the output or error message, nothing else.`;
     return () => {
       document.removeEventListener('keydown', handleKeyPress);
     };
-  }, [answer, speechToText, questionNumber, isCodingQuestion]);
+  }, [answer, code, speechToText, questionNumber, isCodingQuestion]);
 
-// TextAnswerArea Component - COMPLETELY FIXED VERSION
-const TextAnswerArea = () => {
-  const textareaRef = useRef(null);
-
-  // Focus the textarea when component mounts
-  useEffect(() => {
-    if (textareaRef.current) {
-      textareaRef.current.focus();
-    }
-  }, []);
-
-  return (
-    <div className="flex-1 bg-black/30 backdrop-blur-sm rounded-2xl border border-gray-500/30 p-4 flex flex-col">
-      <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center space-x-2">
-          <h3 className="font-semibold text-gray-300">Your Answer</h3>
-          {currentCategory === "Closing" && (
-            <span className="text-xs bg-green-500/20 px-3 py-1 rounded-full border border-green-500/30 text-green-300">
-              Closing Section - Ask your questions!
-            </span>
-          )}
-          {candidateSpeaking && (
-            <div className="flex items-center space-x-1">
-              <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-              <span className="text-xs text-green-400">Listening</span>
-            </div>
-          )}
-          {!isSpeechSupported && (
-            <span className="text-xs text-red-400 ml-2">(Not supported)</span>
-          )}
-          {!micPermissionGranted && isSpeechSupported && (
-            <span className="text-xs text-yellow-400 ml-2">(Mic permission required)</span>
-          )}
-        </div>
-        <div className="text-xs text-gray-400">
-          {answer.length} characters
-        </div>
-      </div>
-
-      {/* Speech Error Display */}
-      {speechError && (
-        <div className="mb-3 p-3 bg-red-500/20 border border-red-500/30 rounded-lg">
-          <p className="text-sm text-red-300 font-medium">
-            ⚠️ {speechError}
-          </p>
-        </div>
-      )}
-
-      {/* Speech Recognition Status */}
-      {candidateSpeaking && speechToText && (
-        <div className="mb-3 p-3 bg-green-500/20 border border-green-500/30 rounded-lg">
-          <div className="flex items-center space-x-2 mb-2">
-            <div className="flex space-x-1">
-              <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-              <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse delay-75"></div>
-              <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse delay-150"></div>
-            </div>
-            <span className="text-sm text-green-300 font-medium">Listening...</span>
-          </div>
-          <p className="text-sm text-gray-300 whitespace-pre-wrap">
-            {speechToText}
-          </p>
-          {speechToText.includes('[') && (
-            <p className="text-xs text-green-400 mt-1">
-              Words in brackets are being processed in real-time...
-            </p>
-          )}
-        </div>
-      )}
-
-      {/* Textarea Container */}
-      <div className="flex-1 min-h-0 mb-4">
-        <textarea
-          ref={textareaRef}
-          value={answer}
-          onChange={(e) => setAnswer(e.target.value)}
-          placeholder="Type your answer here. You can also use voice input by clicking the microphone button below."
-          className="w-full h-full bg-black/50 text-white p-4 rounded-xl border border-white/10 focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 resize-none font-mono text-sm focus:outline-none"
-          style={{ 
-            minHeight: '200px'
-          }}
-          onFocus={(e) => {
-            // Ensure the textarea stays focused when clicked
-            e.target.select();
-          }}
-        />
-      </div>
-
-      {/* Microphone Button - COMPLETELY SEPARATED from textarea */}
-      <div className="flex items-center justify-between mb-4 p-3 bg-black/30 rounded-lg border border-gray-600/30">
-        <div className="flex items-center space-x-2">
-          <span className="text-sm text-gray-300">Voice Input:</span>
-          <button
-            onClick={toggleVoiceRecognition}
-            disabled={!isSpeechSupported}
-            className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${
-              candidateSpeaking 
-                ? 'bg-red-500/80 border border-red-500 text-white shadow-lg' 
-                : isSpeechSupported
-                ? 'bg-green-500/80 border border-green-500 text-white hover:bg-green-600 shadow-lg hover:scale-105'
-                : 'bg-gray-500/80 border border-gray-500 text-gray-300 cursor-not-allowed'
-            }`}
-          >
-            {candidateSpeaking ? 
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 10a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z" />
-              </svg>
-              :
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
-              </svg>
-            }
-          </button>
-          <span className="text-xs text-gray-400 ml-2">
-            {candidateSpeaking ? 'Click to stop recording' : 'Click to start voice input'}
-          </span>
-        </div>
-        
-        <div className="text-xs text-gray-400">
-          Press <kbd className="px-2 py-1 bg-black/50 rounded text-xs">Ctrl+Enter</kbd> to submit
-        </div>
-      </div>
-      
-      <div className="flex justify-between items-center">
-        <div className="flex space-x-3">
-          <button
-            onClick={skipQuestion}
-            className="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded text-sm font-medium transition-all"
-          >
-            Skip Question
-          </button>
-          
-          {showEndInterviewButton && currentCategory === "Closing" && (
-            <button 
-              onClick={handleEndInterview}
-              className="px-6 py-2 rounded-lg font-medium transition-all bg-gradient-to-r from-red-600 to-orange-600 hover:from-red-700 hover:to-orange-700 shadow-lg"
-            >
-              🏁 End Interview
-            </button>
-          )}
-        </div>
-        
-        <button 
-          onClick={() => handleSubmitAnswer()}
-          disabled={!answer.trim()}
-          className={`px-6 py-2 rounded-lg font-medium transition-all ${
-            answer.trim()
-              ? 'bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 shadow-lg' 
-              : 'bg-gray-700 cursor-not-allowed opacity-50'
-          }`}
-        >
-          {currentCategory === "Closing" ? 'Submit & Continue →' : questionNumber < questions.length ? 'Submit Answer →' : 'Submit Answer →'}
-        </button>
-      </div>
-    </div>
-  );
-};
   return (
     <div 
       ref={containerRef}
@@ -1736,7 +1672,7 @@ const TextAnswerArea = () => {
             </div>
           )}
           {isCodingQuestion && (
-            <div className="text-xs bg-blue-500/20 px-3 py-1 rounded-full border border-blue-500/30">
+            <div className="text-xs bg-green-500/20 px-3 py-1 rounded-full border border-green-500/30">
               Coding Question
             </div>
           )}
@@ -1851,7 +1787,7 @@ const TextAnswerArea = () => {
                     </span>
                   )}
                   {isCodingQuestion && (
-                    <span className="text-xs bg-blue-600/30 px-2 py-1 rounded-full">
+                    <span className="text-xs bg-green-600/30 px-2 py-1 rounded-full">
                       Coding Question
                     </span>
                   )}
@@ -1884,23 +1820,149 @@ const TextAnswerArea = () => {
             </div>
           </div>
 
-          {/* Dynamic Answer Container */}
+          {/* Conditional Rendering: Code Editor for Coding Questions, Regular Answer for Others */}
           {isCodingQuestion ? (
-            <div className="flex-1">
-              <CodeEditor
-                code={code}
-                onCodeChange={setCode}
-                selectedLanguage={selectedLanguage}
-                onLanguageChange={setSelectedLanguage}
-                onRunCode={runCode}
-                output={codeOutput}
-                isRunning={isRunningCode}
-                onSubmitCode={submitCode}
-                onSkipQuestion={skipQuestion}
-              />
-            </div>
+            <CodeEditor
+              code={code}
+              onCodeChange={setCode}
+              selectedLanguage={selectedLanguage}
+              onLanguageChange={setSelectedLanguage}
+              onRunCode={handleRunCode}
+              output={output}
+              isRunning={isRunning}
+              onSubmitCode={handleSubmitCode}
+              onSkipQuestion={handleSkipQuestion}
+            />
           ) : (
-            <TextAnswerArea />
+            <div className="flex-1 bg-black/30 backdrop-blur-sm rounded-2xl border border-gray-500/30 p-4 flex flex-col">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center space-x-2">
+                  <h3 className="font-semibold text-gray-300">Your Answer</h3>
+                  {currentCategory === "Closing" && (
+                    <span className="text-xs bg-green-500/20 px-3 py-1 rounded-full border border-green-500/30 text-green-300">
+                      Closing Section - Ask your questions!
+                    </span>
+                  )}
+                  {candidateSpeaking && (
+                    <div className="flex items-center space-x-1">
+                      <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                      <span className="text-xs text-green-400">Listening</span>
+                    </div>
+                  )}
+                  {!isSpeechSupported && (
+                    <span className="text-xs text-red-400 ml-2">(Not supported)</span>
+                  )}
+                  {!micPermissionGranted && isSpeechSupported && (
+                    <span className="text-xs text-yellow-400 ml-2">(Mic permission required)</span>
+                  )}
+                </div>
+                <div className="text-xs text-gray-400">
+                  {answer.length} characters
+                </div>
+              </div>
+
+              {/* Speech Error Display */}
+              {speechError && (
+                <div className="mb-3 p-3 bg-red-500/20 border border-red-500/30 rounded-lg">
+                  <p className="text-sm text-red-300 font-medium">
+                    ⚠️ {speechError}
+                  </p>
+                </div>
+              )}
+
+              {/* Speech Recognition Status */}
+              {candidateSpeaking && speechToText && (
+                <div className="mb-3 p-3 bg-green-500/20 border border-green-500/30 rounded-lg">
+                  <div className="flex items-center space-x-2 mb-2">
+                    <div className="flex space-x-1">
+                      <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                      <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse delay-75"></div>
+                      <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse delay-150"></div>
+                    </div>
+                    <span className="text-sm text-green-300 font-medium">Listening...</span>
+                  </div>
+                  <p className="text-sm text-gray-300 whitespace-pre-wrap">
+                    {speechToText}
+                  </p>
+                  {speechToText.includes('[') && (
+                    <p className="text-xs text-green-400 mt-1">
+                      Words in brackets are being processed in real-time...
+                    </p>
+                  )}
+                </div>
+              )}
+
+              {/* Textarea with Microphone Button */}
+              <div className="flex-1 relative">
+                <textarea
+                  value={answer}
+                  onChange={(e) => setAnswer(e.target.value)}
+                  placeholder="Type your answer here. You can also use voice input by clicking the microphone button."
+                  className="w-full h-full bg-black/50 text-white p-4 rounded-xl border border-white/10 focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 resize-none font-mono text-sm pr-16"
+                />
+                
+                {/* Round Microphone Button */}
+                <button
+                  onClick={toggleVoiceRecognition}
+                  disabled={!isSpeechSupported}
+                  className={`absolute bottom-4 right-4 w-12 h-12 rounded-full flex items-center justify-center transition-all ${
+                    candidateSpeaking 
+                      ? 'bg-red-500/80 border border-red-500 text-white shadow-lg' 
+                      : isSpeechSupported
+                      ? 'bg-green-500/80 border border-green-500 text-white hover:bg-green-600 shadow-lg hover:scale-105'
+                      : 'bg-gray-500/80 border border-gray-500 text-gray-300 cursor-not-allowed'
+                  }`}
+                >
+                  {candidateSpeaking ? 
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 10a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z" />
+                    </svg>
+                    :
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+                    </svg>
+                  }
+                </button>
+              </div>
+              
+              <div className="flex justify-between items-center mt-4">
+                <div className="text-xs text-gray-400">
+                  Press <kbd className="px-2 py-1 bg-black/50 rounded text-xs">Ctrl+Enter</kbd> to submit
+                </div>
+                
+                <div className="flex space-x-3">
+                  {/* Skip Question Button */}
+                  <button 
+                    onClick={handleSkipQuestion}
+                    className="px-6 py-2 rounded-lg font-medium transition-all bg-gradient-to-r from-gray-600 to-gray-700 hover:from-gray-700 hover:to-gray-800 shadow-lg border border-gray-500/30"
+                  >
+                    Skip Question →
+                  </button>
+                  
+                  {showEndInterviewButton && currentCategory === "Closing" && (
+                    <button 
+                      onClick={handleEndInterview}
+                      className="px-6 py-2 rounded-lg font-medium transition-all bg-gradient-to-r from-red-600 to-orange-600 hover:from-red-700 hover:to-orange-700 shadow-lg"
+                    >
+                      🏁 End Interview
+                    </button>
+                  )}
+                  
+                  <button 
+                    onClick={handleSubmitAnswer}
+                    disabled={!answer.trim()}
+                    className={`px-6 py-2 rounded-lg font-medium transition-all ${
+                      answer.trim()
+                        ? 'bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 shadow-lg' 
+                        : 'bg-gray-700 cursor-not-allowed opacity-50'
+                    }`}
+                  >
+                    {currentCategory === "Closing" ? 'Submit & Continue →' : questionNumber < questions.length ? 'Submit Answer →' : 'Submit Answer →'}
+                  </button>
+                </div>
+              </div>
+            </div>
           )}
         </div>
       </div>

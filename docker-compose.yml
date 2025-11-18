@@ -1,0 +1,72 @@
+# Docker Compose configuration for EvalBot Application
+
+services:
+  # MongoDB Database
+  mongodb:
+    image: mongo:6.0
+    container_name: evalbot-mongodb
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: password
+      MONGO_INITDB_DATABASE: evalbot
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+      - mongodb_config:/data/configdb
+    networks:
+      - evalbot-network
+
+  # Backend API
+  backend:
+    build:
+      context: ./Backend
+      dockerfile: Dockerfile
+    container_name: evalbot-backend
+    restart: unless-stopped
+    environment:
+      - PORT=5000
+      - MONGO_URI=mongodb://admin:password@mongodb:27017/evalbot?authSource=admin
+      - NODE_ENV=production
+    ports:
+      - "5000:5000"
+    depends_on:
+      - mongodb
+    networks:
+      - evalbot-network
+    volumes:
+      - ./Backend:/app
+      - /app/node_modules
+
+  # Admin Panel
+  admin:
+    build:
+      context: ./Admin
+      dockerfile: Dockerfile
+    container_name: evalbot-admin
+    restart: unless-stopped
+    ports:
+      - "3000:80"
+    networks:
+      - evalbot-network
+
+  # Frontend Application
+  frontend:
+    build:
+      context: ./Frontend
+      dockerfile: Dockerfile
+    container_name: evalbot-frontend
+    restart: unless-stopped
+    ports:
+      - "3001:80"
+    networks:
+      - evalbot-network
+
+volumes:
+  mongodb_data:
+  mongodb_config:
+
+networks:
+  evalbot-network:
+    driver: bridge
