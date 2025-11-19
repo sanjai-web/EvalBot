@@ -18,8 +18,11 @@ import {
   FaBriefcase
 } from 'react-icons/fa';
 
+const API_URL = 'http://localhost:5000/api';
+
 function Details() {
   const [formData, setFormData] = useState({
+    interviewId: '',
     email: '',
     password: '',
     resume: null
@@ -29,10 +32,8 @@ function Details() {
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [showTermsPopup, setShowTermsPopup] = useState(false);
   const [pdfJsLoaded, setPdfJsLoaded] = useState(false);
+  const [error, setError] = useState('');
   const navigate = useNavigate();
-
-  // API Base URL
-  const API_BASE_URL = 'http://localhost:5000';
 
   // Load PDF.js library
   React.useEffect(() => {
@@ -148,7 +149,7 @@ function Details() {
               .map(item => item.str)
               .join(' ');
             
-            fullText += `\n--- Page ${pageNum} ---\n${pageText}\n`;
+            fullText += pageText + ' ';
           }
           
           resolve(fullText.trim());
@@ -185,41 +186,74 @@ function Details() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
+    if (!formData.interviewId || !formData.email || !formData.password) {
+      setError('Please fill in all required fields');
+      return;
+    }
+
     if (!formData.resume) {
-      alert('Please upload a resume file');
+      setError('Please upload a resume file');
       return;
     }
 
     if (!termsAccepted) {
-      alert('Please accept the terms and conditions to proceed');
+      setError('Please accept the terms and conditions to proceed');
       return;
     }
 
     setIsLoading(true);
+    setError('');
 
     try {
-      console.log('📋 Interview submission details:', {
-        email: formData.email,
-        resume: formData.resume.name,
-        fileSize: (formData.resume.size / 1024).toFixed(2) + ' KB'
+      // Extract resume text
+      const resumeText = await extractTextFromPDF(formData.resume);
+      console.log('📝 Extracted PDF text:', resumeText);
+
+      // Authenticate user and get interview details
+      const loginResponse = await fetch(`${API_URL}/auth/login`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          interviewId: formData.interviewId.toUpperCase(),
+          loginId: formData.email.toLowerCase(),
+          password: formData.password
+        })
       });
-      
-      try {
-        const extractedText = await extractTextFromPDF(formData.resume);
-        console.log('📝 Extracted PDF text:', extractedText);
-      } catch (error) {
-        console.error('PDF text extraction error:', error);
+
+      const loginData = await loginResponse.json();
+
+      if (!loginResponse.ok) {
+        throw new Error(loginData.message || 'Authentication failed');
       }
 
-      // Simulate success for demo
-      setTimeout(() => {
-        alert('✅ Form submitted successfully! Check console for extracted resume text.');
-        console.log('✅ Interview preparation completed');
-      }, 1000);
+      // Prepare interview data
+      const interviewData = {
+        user: loginData.user,
+        collection: loginData.collection,
+        resume: {
+          file: formData.resume,
+          textContent: resumeText
+        },
+        jobName: loginData.collection.role,
+        companyName: loginData.collection.company,
+        jobDescription: loginData.collection.description,
+        questionLevel: loginData.collection.level.toLowerCase()
+      };
+
+      // Navigate to appropriate interview page based on domain
+      if (loginData.collection.domain === 'Computer Science') {
+        navigate('/ComputerBased', { state: { interviewData } });
+      } else if (loginData.collection.domain === 'Role Based') {
+        navigate('/rolebased', { state: { interviewData } });
+      } else {
+        throw new Error('Unknown interview domain');
+      }
 
     } catch (error) {
       console.error('❌ Submission error:', error);
-      alert('❌ An error occurred while submitting the form.');
+      setError(error.message || 'An error occurred while submitting the form.');
     } finally {
       setIsLoading(false);
     }
@@ -266,14 +300,37 @@ function Details() {
         <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-6 backdrop-blur-sm bg-white/95">
           {/* Form Header */}
           <div className="text-center mb-6">
-           
             <h1 className="text-lg font-semibold text-gray-900">
               Candidate Login
             </h1>
-           
           </div>
 
+          {error && (
+            <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg">
+              <p className="text-sm font-medium">{error}</p>
+            </div>
+          )}
+
           <form className="space-y-4" onSubmit={handleSubmit}>
+            {/* Interview ID Input */}
+            <div>
+              <label htmlFor="interviewId" className="block text-sm font-medium text-gray-700 mb-1">
+                <FaBriefcase className="inline w-3 h-3 mr-1 text-blue-600" />
+                Interview ID
+              </label>
+              <input
+                id="interviewId"
+                name="interviewId"
+                type="text"
+                required
+                value={formData.interviewId}
+                onChange={handleChange}
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 bg-white uppercase"
+                placeholder="Enter Interview ID"
+                style={{ textTransform: 'uppercase' }}
+              />
+            </div>
+
             {/* Email Input */}
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
@@ -309,9 +366,6 @@ function Details() {
                 className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 bg-white"
                 placeholder="Enter your password"
               />
-              <p className="text-xs text-gray-500 mt-1">
-                Password must be at least 6 characters
-              </p>
             </div>
 
             {/* Resume Upload */}
@@ -424,8 +478,6 @@ function Details() {
                 )}
               </button>
             </div>
-
-           
           </form>
         </div>
       </div>

@@ -9,11 +9,11 @@ const PORT = process.env.PORT || 5000;
 
 // Middleware
 app.use(cors());
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: true }));
+app.use(bodyParser.json({ limit: '50mb' }));
+app.use(bodyParser.urlencoded({ extended: true, limit: '50mb' }));
 
 // MongoDB Connection
-const MONGO_URI = process.env.MONGO_URI ;
+const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/evalbot';
 
 mongoose.connect(MONGO_URI, {
   useNewUrlParser: true,
@@ -126,6 +126,73 @@ const collectionSchema = new mongoose.Schema({
   }
 });
 
+// Interview Results Schema
+const interviewResultSchema = new mongoose.Schema({
+  interviewId: {
+    type: String,
+    required: true,
+    index: true
+  },
+  userId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true
+  },
+  userName: {
+    type: String,
+    required: true
+  },
+  userEmail: {
+    type: String,
+    required: true
+  },
+  company: {
+    type: String,
+    required: true
+  },
+  role: {
+    type: String,
+    required: true
+  },
+  domain: {
+    type: String,
+    required: true
+  },
+  level: {
+    type: String,
+    required: true
+  },
+  conversationHistory: [{
+    category: String,
+    question: String,
+    answer: String,
+    evaluation: String,
+    score: Number,
+    timestamp: {
+      type: Date,
+      default: Date.now
+    }
+  }],
+  knowledgeScores: {
+    projects: Number,
+    internships: Number,
+    problemSolving: Number,
+    personality: Number
+  },
+  overallScore: {
+    type: Number,
+    min: 0,
+    max: 100
+  },
+  totalQuestions: Number,
+  answeredQuestions: Number,
+  interviewDuration: Number, // in seconds
+  completedAt: {
+    type: Date,
+    default: Date.now
+  }
+});
+
 // Update timestamp on save
 collectionSchema.pre('save', function(next) {
   this.updatedAt = Date.now();
@@ -134,6 +201,7 @@ collectionSchema.pre('save', function(next) {
 
 const User = mongoose.model('User', userSchema);
 const Collection = mongoose.model('Collection', collectionSchema);
+const InterviewResult = mongoose.model('InterviewResult', interviewResultSchema);
 
 // ==================== COLLECTION ROUTES ====================
 
@@ -447,6 +515,10 @@ app.post('/api/auth/login', async (req, res) => {
     // Get collection details
     const collection = await Collection.findOne({ interviewId: user.interviewId });
 
+    if (!collection) {
+      return res.status(404).json({ message: 'Interview not found' });
+    }
+
     // Check if interview is within scheduled time
     const parseCustomDateTime = (dateTimeStr) => {
       const [datePart, timePart] = dateTimeStr.split(' ');
@@ -502,6 +574,94 @@ app.get('/api/users/:interviewId/:loginId', async (req, res) => {
     res.json(user);
   } catch (error) {
     console.error('Error fetching user:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
+
+// ==================== INTERVIEW RESULTS ROUTES ====================
+
+// Save interview results
+app.post('/api/interview/results', async (req, res) => {
+  try {
+    const {
+      interviewId,
+      userId,
+      userName,
+      userEmail,
+      company,
+      role,
+      domain,
+      level,
+      conversationHistory,
+      knowledgeScores,
+      overallScore,
+      totalQuestions,
+      answeredQuestions,
+      interviewDuration
+    } = req.body;
+
+    // Calculate overall score if not provided
+    const calculatedScore = overallScore || Math.round(
+      Object.values(knowledgeScores).reduce((sum, score) => sum + score, 0) / 
+      Object.values(knowledgeScores).length
+    );
+
+    const interviewResult = new InterviewResult({
+      interviewId,
+      userId,
+      userName,
+      userEmail,
+      company,
+      role,
+      domain,
+      level,
+      conversationHistory,
+      knowledgeScores,
+      overallScore: calculatedScore,
+      totalQuestions,
+      answeredQuestions,
+      interviewDuration
+    });
+
+    await interviewResult.save();
+
+    // Update user's score in the User collection
+    await User.findByIdAndUpdate(userId, {
+      score: calculatedScore
+    });
+
+    res.status(201).json({
+      message: 'Interview results saved successfully',
+      result: interviewResult
+    });
+  } catch (error) {
+    console.error('Error saving interview results:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
+
+// Get interview results for a user
+app.get('/api/interview/results/:userId', async (req, res) => {
+  try {
+    const results = await InterviewResult.find({ userId: req.params.userId })
+      .sort({ completedAt: -1 });
+    
+    res.json(results);
+  } catch (error) {
+    console.error('Error fetching interview results:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
+
+// Get interview results for a collection
+app.get('/api/collections/:interviewId/results', async (req, res) => {
+  try {
+    const results = await InterviewResult.find({ interviewId: req.params.interviewId })
+      .sort({ overallScore: -1 });
+    
+    res.json(results);
+  } catch (error) {
+    console.error('Error fetching collection results:', error);
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 });

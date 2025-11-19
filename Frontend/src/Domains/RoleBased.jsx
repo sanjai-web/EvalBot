@@ -2,8 +2,9 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { OrbitControls } from '@react-three/drei';
+import { FaUserCircle } from 'react-icons/fa';
 
-// AI Avatar Components (reusing from original)
+// AI Avatar Components
 const AICore = ({ isSpeaking }) => {
   const coreRef = useRef();
   const glowRef = useRef();
@@ -244,6 +245,13 @@ const RoleBasedInterview = () => {
   const [fullscreenInitialized, setFullscreenInitialized] = useState(false);
   const [micPermissionGranted, setMicPermissionGranted] = useState(false);
   
+  // User info state
+  const [userInfo, setUserInfo] = useState({
+    name: interviewData?.user?.name || 'Candidate',
+    role: interviewData?.collection?.role || 'Professional Role',
+    company: interviewData?.companyName || 'Company'
+  });
+
   const timerRef = useRef(null);
   const containerRef = useRef(null);
   const videoRef = useRef(null);
@@ -255,6 +263,7 @@ const RoleBasedInterview = () => {
   const maxRestartAttempts = 3;
   const finalTranscriptAccumulator = useRef('');
 
+  const API_URL = 'http://localhost:5000/api';
   const GEMINI_API_KEY = 'AIzaSyAROwOdL1mFBZTqOb81hl6prgv3Jqpvgzk';
   const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent';
 
@@ -1037,7 +1046,7 @@ Keep it constructive, professional, and encouraging.`;
     }, 1000);
   };
 
-  const handleEndInterview = () => {
+  const handleEndInterview = async () => {
     calculateFinalScores();
     
     const resultsData = {
@@ -1050,6 +1059,47 @@ Keep it constructive, professional, and encouraging.`;
       answeredQuestions: conversationHistory.filter(item => !item.isCandidateQuestion).length
     };
     
+    // Calculate overall score
+    const overallScore = Math.round(
+      Object.values(categoryScores).reduce((sum, score) => sum + score, 0) / 
+      Object.values(categoryScores).length
+    );
+
+    try {
+      // Save results to database
+      const saveResponse = await fetch(`${API_URL}/interview/results`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          interviewId: interviewData.collection.interviewId,
+          userId: interviewData.user.id,
+          userName: interviewData.user.name,
+          userEmail: interviewData.user.loginId,
+          company: interviewData.collection.company,
+          role: interviewData.collection.role,
+          domain: interviewData.collection.domain,
+          level: interviewData.collection.level,
+          conversationHistory: conversationHistory.filter(item => !item.isCandidateQuestion),
+          knowledgeScores: categoryScores,
+          overallScore: overallScore,
+          totalQuestions: questions.length,
+          answeredQuestions: conversationHistory.filter(item => !item.isCandidateQuestion).length,
+          interviewDuration: timer
+        })
+      });
+
+      if (!saveResponse.ok) {
+        throw new Error('Failed to save interview results');
+      }
+
+      console.log('✅ Interview results saved successfully');
+    } catch (error) {
+      console.error('❌ Error saving interview results:', error);
+    }
+
+    // Navigate to results page
     navigate('/result', { state: { results: resultsData } });
   };
 
@@ -1119,6 +1169,17 @@ Keep it constructive, professional, and encouraging.`;
         </div>
         
         <div className="flex items-center space-x-6">
+          {/* User Info Display */}
+          <div className="flex items-center space-x-3 bg-blue-500/20 px-4 py-2 rounded-lg border border-blue-500/30">
+            <div className="flex items-center space-x-2">
+              <FaUserCircle className="w-5 h-5 text-blue-400" />
+              <div className="text-right">
+                <div className="text-sm font-medium text-white">{userInfo.name}</div>
+                <div className="text-xs text-blue-300">{userInfo.role}</div>
+              </div>
+            </div>
+          </div>
+
           <div className="flex items-center space-x-2 bg-blue-500/20 px-4 py-2 rounded-lg border border-blue-500/30">
             <svg className="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />

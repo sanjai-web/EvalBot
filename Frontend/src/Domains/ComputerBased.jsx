@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { OrbitControls } from '@react-three/drei';
-
+import { FaUserCircle } from 'react-icons/fa';
 // AI Avatar Components
 const AICore = ({ isSpeaking }) => {
   const coreRef = useRef();
@@ -311,85 +311,85 @@ const CodeEditor = ({
         </div>
       </div>
 
-   {/* Output Panel - Scrollable */}
-<div className="border-t border-gray-700 flex flex-col flex-shrink-0" style={{ height: '200px' }}>
-  <div className="bg-gray-800 px-4 py-2 border-b border-gray-700 flex-shrink-0">
-    <span className="text-sm font-medium text-gray-300">Output</span>
-  </div>
-  <div 
-    className="flex-1 p-3 bg-black overflow-y-auto overflow-x-auto scrollbar-thin scrollbar-thumb-gray-600 scrollbar-track-gray-900"
-    style={{
-      maxHeight: '180px',
-      minHeight: '180px'
-    }}
-  >
-    {isRunning ? (
-      <div className="flex items-center space-x-2 text-blue-400">
-        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-400"></div>
-        <span className="text-sm">Running code...</span>
+      {/* Output Panel - Scrollable */}
+      <div className="border-t border-gray-700 flex flex-col flex-shrink-0" style={{ height: '200px' }}>
+        <div className="bg-gray-800 px-4 py-2 border-b border-gray-700 flex-shrink-0">
+          <span className="text-sm font-medium text-gray-300">Output</span>
+        </div>
+        <div 
+          className="flex-1 p-3 bg-black overflow-y-auto overflow-x-auto scrollbar-thin scrollbar-thumb-gray-600 scrollbar-track-gray-900"
+          style={{
+            maxHeight: '180px',
+            minHeight: '180px'
+          }}
+        >
+          {isRunning ? (
+            <div className="flex items-center space-x-2 text-blue-400">
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-400"></div>
+              <span className="text-sm">Running code...</span>
+            </div>
+          ) : output ? (
+            <pre className="text-green-400 font-mono text-sm whitespace-pre-wrap break-words">{output}</pre>
+          ) : (
+            <div className="text-gray-500 text-sm">// Output will appear here after running your code</div>
+          )}
+        </div>
       </div>
-    ) : output ? (
-      <pre className="text-green-400 font-mono text-sm whitespace-pre-wrap break-words">{output}</pre>
-    ) : (
-      <div className="text-gray-500 text-sm">// Output will appear here after running your code</div>
-    )}
-  </div>
-</div>
 
-{/* Action Buttons */}
-<div className="bg-gray-800 px-4 py-3 border-t border-gray-700 flex justify-between items-center flex-shrink-0">
-  <div className="flex space-x-2">
-    <button
-      onClick={onRunCode}
-      disabled={isRunning || !code.trim()}
-      className={`px-4 py-2 rounded text-sm font-medium transition-all flex items-center space-x-2 ${
-        isRunning || !code.trim()
-          ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
-          : 'bg-blue-600 hover:bg-blue-700 text-white shadow-lg hover:shadow-blue-500/25'
-      }`}
-    >
-      {isRunning ? (
-        <>
-          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-          <span>Running...</span>
-        </>
-      ) : (
-        <>
+      {/* Action Buttons */}
+      <div className="bg-gray-800 px-4 py-3 border-t border-gray-700 flex justify-between items-center flex-shrink-0">
+        <div className="flex space-x-2">
+          <button
+            onClick={onRunCode}
+            disabled={isRunning || !code.trim()}
+            className={`px-4 py-2 rounded text-sm font-medium transition-all flex items-center space-x-2 ${
+              isRunning || !code.trim()
+                ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
+                : 'bg-blue-600 hover:bg-blue-700 text-white shadow-lg hover:shadow-blue-500/25'
+            }`}
+          >
+            {isRunning ? (
+              <>
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                <span>Running...</span>
+              </>
+            ) : (
+              <>
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span>Run Code</span>
+              </>
+            )}
+          </button>
+          
+          <button
+            onClick={onSkipQuestion}
+            className="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded text-sm font-medium transition-all flex items-center space-x-2 shadow-lg hover:shadow-gray-500/25"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 5l7 7-7 7M5 5l7 7-7 7" />
+            </svg>
+            <span>Skip Question</span>
+          </button>
+        </div>
+        
+        <button
+          onClick={onSubmitCode}
+          disabled={!code.trim()}
+          className={`px-6 py-2 rounded font-medium transition-all flex items-center space-x-2 ${
+            !code.trim()
+              ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
+              : 'bg-green-600 hover:bg-green-700 text-white shadow-lg hover:shadow-green-500/25'
+          }`}
+        >
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
           </svg>
-          <span>Run Code</span>
-        </>
-      )}
-    </button>
-    
-    <button
-      onClick={onSkipQuestion}
-      className="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded text-sm font-medium transition-all flex items-center space-x-2 shadow-lg hover:shadow-gray-500/25"
-    >
-      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 5l7 7-7 7M5 5l7 7-7 7" />
-      </svg>
-      <span>Skip Question</span>
-    </button>
-  </div>
-  
-  <button
-    onClick={onSubmitCode}
-    disabled={!code.trim()}
-    className={`px-6 py-2 rounded font-medium transition-all flex items-center space-x-2 ${
-      !code.trim()
-        ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
-        : 'bg-green-600 hover:bg-green-700 text-white shadow-lg hover:shadow-green-500/25'
-    }`}
-  >
-    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-    </svg>
-    <span>Submit Code</span>
-  </button>
-</div>
+          <span>Submit Code</span>
+        </button>
+      </div>
     </div>
   );
 };
@@ -488,8 +488,16 @@ const Interview = () => {
   const maxRestartAttempts = 3;
   const finalTranscriptAccumulator = useRef('');
 
+  const API_URL = 'http://localhost:5000/api';
   const GEMINI_API_KEY = 'AIzaSyAROwOdL1mFBZTqOb81hl6prgv3Jqpvgzk';
   const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent';
+
+  // User info state
+  const [userInfo, setUserInfo] = useState({
+    name: interviewData?.user?.name || 'Candidate',
+    role: interviewData?.collection?.role || 'Software Engineer',
+    company: interviewData?.companyName || 'Tech Company'
+  });
 
   // Check if current question is a coding question
   const isCodingQuestion = currentCategory.toLowerCase().includes('problem') || 
@@ -1559,7 +1567,7 @@ Output:`;
     }, 1000);
   };
 
-  const handleEndInterview = () => {
+  const handleEndInterview = async () => {
     calculateFinalScores();
     
     const resultsData = {
@@ -1572,6 +1580,47 @@ Output:`;
       answeredQuestions: conversationHistory.filter(item => !item.isCandidateQuestion).length
     };
     
+    // Calculate overall score
+    const overallScore = Math.round(
+      Object.values(knowledgeScores).reduce((sum, score) => sum + score, 0) / 
+      Object.values(knowledgeScores).length
+    );
+
+    try {
+      // Save results to database
+      const saveResponse = await fetch(`${API_URL}/interview/results`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          interviewId: interviewData.collection.interviewId,
+          userId: interviewData.user.id,
+          userName: interviewData.user.name,
+          userEmail: interviewData.user.loginId,
+          company: interviewData.collection.company,
+          role: interviewData.collection.role,
+          domain: interviewData.collection.domain,
+          level: interviewData.collection.level,
+          conversationHistory: conversationHistory.filter(item => !item.isCandidateQuestion),
+          knowledgeScores: knowledgeScores,
+          overallScore: overallScore,
+          totalQuestions: questions.length,
+          answeredQuestions: conversationHistory.filter(item => !item.isCandidateQuestion).length,
+          interviewDuration: timer
+        })
+      });
+
+      if (!saveResponse.ok) {
+        throw new Error('Failed to save interview results');
+      }
+
+      console.log('✅ Interview results saved successfully');
+    } catch (error) {
+      console.error('❌ Error saving interview results:', error);
+    }
+
+    // Navigate to results page
     navigate('/result', { state: { results: resultsData } });
   };
 
@@ -1679,6 +1728,17 @@ Output:`;
         </div>
         
         <div className="flex items-center space-x-6">
+          {/* User Info Display */}
+          <div className="flex items-center space-x-3 bg-blue-500/20 px-4 py-2 rounded-lg border border-blue-500/30">
+            <div className="flex items-center space-x-2">
+              <FaUserCircle className="w-5 h-5 text-blue-400" />
+              <div className="text-right">
+                <div className="text-sm font-medium text-white">{userInfo.name}</div>
+                <div className="text-xs text-blue-300">{userInfo.role}</div>
+              </div>
+            </div>
+          </div>
+
           <div className="flex items-center space-x-2 bg-blue-500/20 px-4 py-2 rounded-lg border border-blue-500/30">
             <svg className="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -1784,11 +1844,6 @@ Output:`;
                   {awaitingFollowUp && (
                     <span className="text-xs bg-orange-600/30 px-2 py-1 rounded-full">
                       Follow-up
-                    </span>
-                  )}
-                  {isCodingQuestion && (
-                    <span className="text-xs bg-green-600/30 px-2 py-1 rounded-full">
-                      Coding Question
                     </span>
                   )}
                   {aiSpeaking && (
