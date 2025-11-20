@@ -244,6 +244,7 @@ const RoleBasedInterview = () => {
   const [showEndInterviewButton, setShowEndInterviewButton] = useState(false);
   const [fullscreenInitialized, setFullscreenInitialized] = useState(false);
   const [micPermissionGranted, setMicPermissionGranted] = useState(false);
+  const [isSavingResults, setIsSavingResults] = useState(false);
   
   // User info state
   const [userInfo, setUserInfo] = useState({
@@ -262,6 +263,7 @@ const RoleBasedInterview = () => {
   const restartAttempts = useRef(0);
   const maxRestartAttempts = 3;
   const finalTranscriptAccumulator = useRef('');
+  const interviewStartTime = useRef(Date.now());
 
   const API_URL = 'http://localhost:5000/api';
   const GEMINI_API_KEY = 'AIzaSyAROwOdL1mFBZTqOb81hl6prgv3Jqpvgzk';
@@ -687,7 +689,8 @@ Keep it constructive, professional, and encouraging.`;
             question: "Candidate's Question",
             answer,
             evaluation: evaluationText,
-            isCandidateQuestion: true
+            isCandidateQuestion: true,
+            timestamp: new Date().toISOString()
           };
           setConversationHistory(prev => [...prev, newEntry]);
           return newEntry;
@@ -700,13 +703,14 @@ Keep it constructive, professional, and encouraging.`;
             question,
             answer,
             evaluation: evaluationText,
-            score
+            score,
+            timestamp: new Date().toISOString()
           };
           setConversationHistory(prev => [...prev, newEntry]);
           
           // Update category scores
           setCategoryScores(prev => {
-            const categoryKey = category.split(' - ')[0].toLowerCase();
+            const categoryKey = category.split(' - ')[0].toLowerCase().replace(/\s+/g, '_');
             const existingScores = prev[categoryKey] || [];
             return {
               ...prev,
@@ -727,10 +731,134 @@ Keep it constructive, professional, and encouraging.`;
         question,
         answer,
         evaluation: "Response recorded",
-        score: 7
+        score: 7,
+        timestamp: new Date().toISOString()
       };
       setConversationHistory(prev => [...prev, newEntry]);
       return newEntry;
+    }
+  };
+
+  // Calculate final scores from all conversation history
+  const calculateFinalScores = () => {
+    const finalScores = {};
+    const categoryCounts = {};
+    
+    // Filter out candidate questions and calculate category averages
+    const validEntries = conversationHistory.filter(item => !item.isCandidateQuestion && item.score);
+    
+    validEntries.forEach(entry => {
+      const categoryKey = entry.category.split(' - ')[0].toLowerCase().replace(/\s+/g, '_');
+      
+      if (!finalScores[categoryKey]) {
+        finalScores[categoryKey] = 0;
+        categoryCounts[categoryKey] = 0;
+      }
+      
+      finalScores[categoryKey] += (entry.score * 10);
+      categoryCounts[categoryKey] += 1;
+    });
+    
+    // Calculate averages
+    Object.keys(finalScores).forEach(category => {
+      if (categoryCounts[category] > 0) {
+        finalScores[category] = Math.round(finalScores[category] / categoryCounts[category]);
+      }
+    });
+    
+    return finalScores;
+  };
+
+  // Update user completion status
+  const updateUserCompletionStatus = async (userId, score) => {
+    try {
+      const response = await fetch(`${API_URL}/collections/${interviewData.collection._id}/users/${userId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          completionStatus: 'Completed',
+          score: score
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update user completion status');
+      }
+
+      const updatedUser = await response.json();
+      console.log('✅ User completion status updated:', updatedUser);
+      return true;
+    } catch (error) {
+      console.error('❌ Error updating user completion status:', error);
+      return false;
+    }
+  };
+
+  // Save interview results to database
+  const saveInterviewResults = async (finalScores, overallScore) => {
+    if (!interviewData || !interviewData.user || !interviewData.collection) {
+      console.error('Missing interview data');
+      return false;
+    }
+
+    try {
+      // Filter conversation history to remove candidate questions for results
+      const validConversationHistory = conversationHistory
+        .filter(item => !item.isCandidateQuestion)
+        .map(item => ({
+          category: item.category,
+          question: item.question,
+          answer: item.answer,
+          evaluation: item.evaluation,
+          score: item.score,
+          timestamp: item.timestamp
+        }));
+
+      const resultsPayload = {
+        interviewId: interviewData.collection.interviewId,
+        userId: interviewData.user.id,
+        userName: interviewData.user.name,
+        userEmail: interviewData.user.loginId,
+        company: interviewData.collection.company,
+        role: interviewData.collection.role,
+        domain: interviewData.collection.domain,
+        level: interviewData.collection.level,
+        conversationHistory: validConversationHistory,
+        knowledgeScores: finalScores,
+        overallScore: overallScore,
+        totalQuestions: questions.length,
+        answeredQuestions: validConversationHistory.length,
+        interviewDuration: timer
+      };
+
+      console.log('📤 Saving interview results:', resultsPayload);
+
+      const saveResponse = await fetch(`${API_URL}/interview/results`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(resultsPayload)
+      });
+
+      if (!saveResponse.ok) {
+        const errorData = await saveResponse.json();
+        throw new Error(errorData.message || 'Failed to save interview results');
+      }
+
+      const savedData = await saveResponse.json();
+      console.log('✅ Interview results saved successfully:', savedData);
+      
+      // Also update user's completion status directly
+      await updateUserCompletionStatus(interviewData.user.id, overallScore);
+      
+      return true;
+    } catch (error) {
+      console.error('❌ Error saving interview results:', error);
+      alert('Warning: Failed to save interview results to database. Your results may not be stored.');
+      return false;
     }
   };
 
@@ -914,9 +1042,9 @@ Keep it constructive, professional, and encouraging.`;
     }
   };
 
-  const handleEndInterviewFromModal = () => {
+  const handleEndInterviewFromModal = async () => {
     setShowExitConfirm(false);
-    handleEndInterview();
+    await handleEndInterview();
   };
 
   const formatTime = (seconds) => {
@@ -1047,81 +1175,62 @@ Keep it constructive, professional, and encouraging.`;
   };
 
   const handleEndInterview = async () => {
-    calculateFinalScores();
-    
-    const resultsData = {
-      interviewData: interviewData,
-      conversationHistory: conversationHistory,
-      categoryScores: categoryScores,
-      timer: timer,
-      questions: questions,
-      totalQuestions: questions.length,
-      answeredQuestions: conversationHistory.filter(item => !item.isCandidateQuestion).length
-    };
-    
-    // Calculate overall score
-    const overallScore = Math.round(
-      Object.values(categoryScores).reduce((sum, score) => sum + score, 0) / 
-      Object.values(categoryScores).length
-    );
-
-    try {
-      // Save results to database
-      const saveResponse = await fetch(`${API_URL}/interview/results`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          interviewId: interviewData.collection.interviewId,
-          userId: interviewData.user.id,
-          userName: interviewData.user.name,
-          userEmail: interviewData.user.loginId,
-          company: interviewData.collection.company,
-          role: interviewData.collection.role,
-          domain: interviewData.collection.domain,
-          level: interviewData.collection.level,
-          conversationHistory: conversationHistory.filter(item => !item.isCandidateQuestion),
-          knowledgeScores: categoryScores,
-          overallScore: overallScore,
-          totalQuestions: questions.length,
-          answeredQuestions: conversationHistory.filter(item => !item.isCandidateQuestion).length,
-          interviewDuration: timer
-        })
-      });
-
-      if (!saveResponse.ok) {
-        throw new Error('Failed to save interview results');
-      }
-
-      console.log('✅ Interview results saved successfully');
-    } catch (error) {
-      console.error('❌ Error saving interview results:', error);
+    if (isSavingResults) {
+      return; // Prevent duplicate saves
     }
 
-    // Navigate to results page
-    navigate('/result', { state: { results: resultsData } });
-  };
+    setIsSavingResults(true);
+    
+    try {
+      // Calculate final scores
+      const finalScores = calculateFinalScores();
+      
+      // Calculate overall score from all valid answers
+      const validScores = Object.values(finalScores).filter(score => score > 0);
+      const overallScore = validScores.length > 0 
+        ? Math.round(validScores.reduce((sum, score) => sum + score, 0) / validScores.length)
+        : 0;
 
-  const calculateFinalScores = () => {
-    const finalScores = {};
-    
-    Object.keys(categoryScores).forEach(category => {
-      const scores = categoryScores[category];
-      if (scores.length > 0) {
-        const average = Math.round(scores.reduce((a, b) => a + b, 0) / scores.length);
-        finalScores[category] = average;
+      console.log('📊 Final Scores:', finalScores);
+      console.log('📈 Overall Score:', overallScore);
+      console.log('💬 Conversation History:', conversationHistory);
+
+      // Save to database
+      const saved = await saveInterviewResults(finalScores, overallScore);
+      
+      if (!saved) {
+        console.warn('⚠️ Results were not saved to database, but continuing to results page');
       }
-    });
-    
-    setCategoryScores(finalScores);
+
+      // Prepare results data for results page
+      const resultsData = {
+        interviewData: interviewData,
+        conversationHistory: conversationHistory,
+        categoryScores: finalScores,
+        overallScore: overallScore,
+        timer: timer,
+        questions: questions,
+        totalQuestions: questions.length,
+        answeredQuestions: conversationHistory.filter(item => !item.isCandidateQuestion).length,
+        saved: saved
+      };
+
+      // Navigate to results page
+      navigate('/result', { state: { results: resultsData } });
+      
+    } catch (error) {
+      console.error('❌ Error in handleEndInterview:', error);
+      alert('An error occurred while ending the interview. Please try again.');
+    } finally {
+      setIsSavingResults(false);
+    }
   };
 
   useEffect(() => {
     const handleKeyPress = (event) => {
       if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') {
         const finalAnswer = answer.trim() || speechToText.replace(/\[.*?\]/g, '').trim();
-        if (finalAnswer) {
+        if (finalAnswer && !isSavingResults) {
           handleSubmitAnswer();
         }
       }
@@ -1131,7 +1240,7 @@ Keep it constructive, professional, and encouraging.`;
     return () => {
       document.removeEventListener('keydown', handleKeyPress);
     };
-  }, [answer, speechToText, questionNumber]);
+  }, [answer, speechToText, questionNumber, isSavingResults]);
 
   return (
     <div 
@@ -1145,6 +1254,7 @@ Keep it constructive, professional, and encouraging.`;
         />
       )}
 
+      {/* Header */}
       <div className="bg-black/40 backdrop-blur-md border-b border-white/10 px-6 py-3 flex items-center justify-between">
         <div className="flex items-center space-x-4">
           <div className="text-xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
@@ -1201,7 +1311,9 @@ Keep it constructive, professional, and encouraging.`;
         </div>
       </div>
 
+      {/* Main Content */}
       <div className="flex-1 flex overflow-hidden">
+        {/* Left Panel - AI Avatar & Webcam */}
         <div className="w-1/3 flex flex-col p-4 space-y-4">
           <div className="flex-1 bg-black/30 backdrop-blur-sm rounded-2xl border border-purple-500/30 p-4 flex flex-col">
             <div className="flex items-center justify-between mb-2">
@@ -1263,7 +1375,9 @@ Keep it constructive, professional, and encouraging.`;
           </div>
         </div>
 
+        {/* Right Panel - Question & Answer */}
         <div className="flex-1 flex flex-col p-4 space-y-4">
+          {/* Question Display */}
           <div className="bg-gradient-to-r from-purple-500/20 to-pink-500/20 backdrop-blur-sm rounded-2xl border border-purple-500/30 p-6">
             <div className="flex items-start space-x-4">
               <div className="flex-shrink-0">
@@ -1316,6 +1430,7 @@ Keep it constructive, professional, and encouraging.`;
             </div>
           </div>
 
+          {/* Speech to Text Display */}
           <div className="bg-green-500/10 backdrop-blur-sm rounded-2xl border border-green-500/30 p-4">
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center space-x-2">
@@ -1333,7 +1448,7 @@ Keep it constructive, professional, and encouraging.`;
               
               <button
                 onClick={toggleVoiceRecognition}
-                disabled={!isSpeechSupported}
+                disabled={!isSpeechSupported || isSavingResults}
                 className={`px-4 py-1 rounded-lg text-sm transition-all ${
                   candidateSpeaking 
                     ? 'bg-red-500/20 border border-red-500/30 text-red-300' 
@@ -1362,6 +1477,7 @@ Keep it constructive, professional, and encouraging.`;
             </div>
           </div>
 
+          {/* Answer Input Area */}
           <div className="flex-1 bg-black/30 backdrop-blur-sm rounded-2xl border border-gray-500/30 p-4 flex flex-col">
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center space-x-2">
@@ -1380,8 +1496,9 @@ Keep it constructive, professional, and encouraging.`;
             <textarea
               value={answer}
               onChange={(e) => setAnswer(e.target.value)}
+              disabled={isSavingResults}
               placeholder="Type your answer here. Be specific and provide examples from your experience. You can also use voice input above..."
-              className="flex-1 w-full bg-black/50 text-white p-4 rounded-xl border border-white/10 focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 resize-none text-sm"
+              className="flex-1 w-full bg-black/50 text-white p-4 rounded-xl border border-white/10 focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 resize-none text-sm disabled:opacity-50 disabled:cursor-not-allowed"
             />
             
             <div className="flex justify-between items-center mt-4">
@@ -1393,17 +1510,29 @@ Keep it constructive, professional, and encouraging.`;
                 {showEndInterviewButton && currentCategory === "Closing" && (
                   <button 
                     onClick={handleEndInterview}
-                    className="px-6 py-2 rounded-lg font-medium transition-all bg-gradient-to-r from-red-600 to-orange-600 hover:from-red-700 hover:to-orange-700 shadow-lg"
+                    disabled={isSavingResults}
+                    className={`px-6 py-2 rounded-lg font-medium transition-all ${
+                      isSavingResults
+                        ? 'bg-gray-700 cursor-not-allowed opacity-50'
+                        : 'bg-gradient-to-r from-red-600 to-orange-600 hover:from-red-700 hover:to-orange-700 shadow-lg'
+                    }`}
                   >
-                    🏁 End Interview
+                    {isSavingResults ? (
+                      <span className="flex items-center space-x-2">
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                        <span>Saving...</span>
+                      </span>
+                    ) : (
+                      '🏁 End Interview'
+                    )}
                   </button>
                 )}
                 
                 <button 
                   onClick={handleSubmitAnswer}
-                  disabled={!answer.trim() && !speechToText.replace(/\[.*?\]/g, '').trim()}
+                  disabled={(!answer.trim() && !speechToText.replace(/\[.*?\]/g, '').trim()) || isSavingResults}
                   className={`px-6 py-2 rounded-lg font-medium transition-all ${
-                    (answer.trim() || speechToText.replace(/\[.*?\]/g, '').trim()) 
+                    (answer.trim() || speechToText.replace(/\[.*?\]/g, '').trim()) && !isSavingResults
                       ? 'bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 shadow-lg' 
                       : 'bg-gray-700 cursor-not-allowed opacity-50'
                   }`}
@@ -1415,6 +1544,23 @@ Keep it constructive, professional, and encouraging.`;
           </div>
         </div>
       </div>
+
+      {/* Saving Indicator Overlay */}
+      {isSavingResults && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 flex items-center justify-center">
+          <div className="bg-gradient-to-br from-slate-800 to-slate-900 border-2 border-purple-500/50 rounded-2xl p-8 max-w-md mx-4 shadow-2xl">
+            <div className="text-center">
+              <div className="w-16 h-16 bg-purple-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-purple-400"></div>
+              </div>
+              <h2 className="text-2xl font-bold text-white mb-2">Saving Your Results</h2>
+              <p className="text-gray-300">
+                Please wait while we save your interview results and update your completion status...
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

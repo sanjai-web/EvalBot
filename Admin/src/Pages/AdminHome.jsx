@@ -256,7 +256,8 @@ function CreateCollectionPopup({ onClose, onCreate }) {
           loginId: (row.Email || row.email || '').toLowerCase(),
           password: String(row['Mobile.no'] || row['Mobile no'] || row.Mobile || row.mobile || ''),
           score: 0,
-          status: 'Active'
+          status: 'Active',
+          completionStatus: 'Incomplete' // Default completion status
         })).filter(user => user.name && user.loginId && user.password);
       }
 

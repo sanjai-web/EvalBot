@@ -3,7 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { 
   ChevronRight, Calendar, FileText, Building2, Upload, Edit, Trash2, Mail, 
   Phone, User, Search, Filter, Eye, Ban, CheckCircle, Hash, X, Save, Plus, Clock,
-  Star, Loader2, Download, ArrowUp, ArrowDown
+  Star, Loader2, Download, ArrowUp, ArrowDown, CheckCircle2, Clock as ClockIcon
 } from 'lucide-react';
 
 const API_URL = 'http://localhost:5000/api';
@@ -21,7 +21,8 @@ function AdminDetails() {
   const [showAddApplicant, setShowAddApplicant] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
-  const [scoreFilter, setScoreFilter] = useState('none'); // 'none', 'high-to-low', 'low-to-high'
+  // Combined filter options
+  const [applicantFilter, setApplicantFilter] = useState('all'); // 'all', 'completed', 'incomplete', 'high-to-low', 'low-to-high'
   const [newApplicant, setNewApplicant] = useState({
     name: '',
     loginId: '',
@@ -62,11 +63,23 @@ function AdminDetails() {
       student.password.includes(searchTerm)
     );
 
-    // Apply score sorting
-    if (scoreFilter === 'high-to-low') {
-      filtered = [...filtered].sort((a, b) => b.score - a.score);
-    } else if (scoreFilter === 'low-to-high') {
-      filtered = [...filtered].sort((a, b) => a.score - b.score);
+    // Apply combined filter
+    switch (applicantFilter) {
+      case 'completed':
+        filtered = filtered.filter(student => student.completionStatus === 'Completed');
+        break;
+      case 'incomplete':
+        filtered = filtered.filter(student => student.completionStatus === 'Incomplete');
+        break;
+      case 'high-to-low':
+        filtered = [...filtered].sort((a, b) => b.score - a.score);
+        break;
+      case 'low-to-high':
+        filtered = [...filtered].sort((a, b) => a.score - b.score);
+        break;
+      default:
+        // 'all' - no additional filtering
+        break;
     }
 
     return filtered;
@@ -76,14 +89,16 @@ function AdminDetails() {
 
   const downloadExcel = () => {
     // Create CSV content
-    const headers = ['Name', 'Email', 'Mobile', 'Score'];
+    const headers = ['Name', 'Email', 'Mobile', 'Score', 'Interview Status', 'Completion Date'];
     const csvContent = [
       headers.join(','),
       ...filteredStudents.map(student => [
         `"${student.name}"`,
         `"${student.loginId}"`,
         `"${student.password}"`,
-        student.score
+        student.score,
+        student.completionStatus,
+        student.completedAt ? new Date(student.completedAt).toLocaleString() : 'N/A'
       ].join(','))
     ].join('\n');
 
@@ -150,6 +165,43 @@ function AdminDetails() {
     } catch (err) {
       console.error('Error updating user status:', err);
       alert('Failed to update user status');
+    }
+  };
+
+  const toggleCompletionStatus = async (studentId) => {
+    try {
+      const student = students.find(s => s._id === studentId);
+      const newCompletionStatus = student.completionStatus === 'Completed' ? 'Incomplete' : 'Completed';
+
+      const response = await fetch(`${API_URL}/collections/${collection._id}/users/${studentId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ completionStatus: newCompletionStatus }),
+      });
+
+      if (!response.ok) throw new Error('Failed to update completion status');
+
+      const updatedStudents = students.map(s =>
+        s._id === studentId ? { 
+          ...s, 
+          completionStatus: newCompletionStatus,
+          completedAt: newCompletionStatus === 'Completed' ? new Date() : null
+        } : s
+      );
+      
+      setStudents(updatedStudents);
+
+      // Update collection stats
+      const completedCount = updatedStudents.filter(s => s.completionStatus === 'Completed').length;
+      setEditedCollection(prev => ({
+        ...prev,
+        completedApplicants: completedCount
+      }));
+    } catch (err) {
+      console.error('Error updating completion status:', err);
+      alert('Failed to update completion status');
     }
   };
 
@@ -229,7 +281,8 @@ function AdminDetails() {
         },
         body: JSON.stringify({
           ...newApplicant,
-          status: 'Active'
+          status: 'Active',
+          completionStatus: 'Incomplete'
         }),
       });
 
@@ -269,7 +322,8 @@ function AdminDetails() {
       
       setEditedCollection(prev => ({
         ...prev,
-        applicants: Math.max(0, prev.applicants - 1)
+        applicants: Math.max(0, prev.applicants - 1),
+        completedApplicants: Math.max(0, prev.completedApplicants - 1)
       }));
     } catch (err) {
       console.error('Error deleting user:', err);
@@ -311,6 +365,8 @@ function AdminDetails() {
   }
 
   const interviewStatus = getInterviewStatus(editedCollection.startDateTime, editedCollection.endDateTime);
+  const completedCount = students.filter(s => s.completionStatus === 'Completed').length;
+  const incompleteCount = students.filter(s => s.completionStatus === 'Incomplete').length;
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -336,6 +392,7 @@ function AdminDetails() {
       </header>
 
       <div className="max-w-7xl mx-auto px-6 py-8 space-y-8">
+        {/* Collection details section remains the same */}
         <div className="bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden">
           <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border-b border-slate-200 p-6">
             <div className="flex items-start justify-between">
@@ -467,7 +524,16 @@ function AdminDetails() {
               <ColorDetailItem 
                 icon={Building2} 
                 label="Total Applicants" 
-                value={students.length} 
+                value={
+                  <div>
+                    <div className="font-semibold text-slate-900">
+                      {students.length} total
+                    </div>
+                    <div className="text-xs text-slate-500 mt-1">
+                      {completedCount} completed • {incompleteCount} incomplete
+                    </div>
+                  </div>
+                } 
                 color="green" 
               />
               
@@ -575,6 +641,7 @@ function AdminDetails() {
           </div>
         </div>
 
+        {/* Applicant Details Section with Updated Filters */}
         <div className="bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden">
           <div className="p-4 border-b border-slate-200 bg-gradient-to-r from-slate-50 to-slate-100">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -583,7 +650,9 @@ function AdminDetails() {
                   <User className="w-5 h-5 text-blue-600" />
                   <span>Applicant Details</span>
                 </h2>
-                <p className="text-slate-600 text-sm mt-1">List of all applicants for this position</p>
+                <p className="text-slate-600 text-sm mt-1">
+                  {completedCount} completed • {incompleteCount} incomplete • {students.length} total applicants
+                </p>
               </div>
               
               <div className="flex flex-col sm:flex-row gap-3">
@@ -599,14 +668,17 @@ function AdminDetails() {
                     />
                   </div>
                   
+                  {/* Combined Filter Dropdown */}
                   <div className="relative">
                     <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-4 h-4" />
                     <select
-                      value={scoreFilter}
-                      onChange={(e) => setScoreFilter(e.target.value)}
-                      className="pl-10 pr-8 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm appearance-none bg-white"
+                      value={applicantFilter}
+                      onChange={(e) => setApplicantFilter(e.target.value)}
+                      className="pl-10 pr-8 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm appearance-none bg-white min-w-[180px]"
                     >
-                      <option value="none">Score: All</option>
+                      <option value="all">All Applicants</option>
+                      <option value="completed">Completed Interviews</option>
+                      <option value="incomplete">Incomplete Interviews</option>
                       <option value="high-to-low">Score: High to Low</option>
                       <option value="low-to-high">Score: Low to High</option>
                     </select>
@@ -649,11 +721,12 @@ function AdminDetails() {
                     <th className="px-4 py-3 text-left text-xs font-semibold text-blue-900 uppercase tracking-wider">
                       <div className="flex items-center space-x-1">
                         <span>Score</span>
-                        {scoreFilter === 'high-to-low' && <ArrowDown className="w-3 h-3" />}
-                        {scoreFilter === 'low-to-high' && <ArrowUp className="w-3 h-3" />}
+                        {applicantFilter === 'high-to-low' && <ArrowDown className="w-3 h-3" />}
+                        {applicantFilter === 'low-to-high' && <ArrowUp className="w-3 h-3" />}
                       </div>
                     </th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-blue-900 uppercase tracking-wider">Status</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-blue-900 uppercase tracking-wider">Interview Status</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-blue-900 uppercase tracking-wider">Account Status</th>
                     <th className="px-4 py-3 text-left text-xs font-semibold text-blue-900 uppercase tracking-wider">Actions</th>
                   </tr>
                 </thead>
@@ -662,7 +735,7 @@ function AdminDetails() {
                     <tr key={student._id} className="hover:bg-blue-50 transition-colors group">
                       <td className="px-4 py-3">
                         <div className="flex items-center space-x-3">
-                          <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center shadow-sm">
+                          <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center shadow-sm flex-shrink-0">
                             <User className="w-4 h-4 text-white" />
                           </div>
                           <span className="font-medium text-slate-900 text-sm group-hover:text-blue-900">{student.name}</span>
@@ -670,19 +743,19 @@ function AdminDetails() {
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex items-center space-x-2">
-                          <Mail className="w-4 h-4 text-blue-500" />
+                          <Mail className="w-4 h-4 text-blue-500 flex-shrink-0" />
                           <span className="text-slate-700 text-sm">{student.loginId}</span>
                         </div>
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex items-center space-x-2">
-                          <Phone className="w-4 h-4 text-green-500" />
+                          <Phone className="w-4 h-4 text-green-500 flex-shrink-0" />
                           <span className="text-slate-700 text-sm">{student.password}</span>
                         </div>
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex items-center space-x-2">
-                          <div className="w-16 bg-slate-200 rounded-full h-2">
+                          <div className="w-16 bg-slate-200 rounded-full h-2 flex-shrink-0">
                             <div 
                               className={`h-2 rounded-full ${
                                 student.score >= 90 ? 'bg-green-500' :
@@ -700,6 +773,33 @@ function AdminDetails() {
                             {student.score}%
                           </span>
                         </div>
+                      </td>
+                      <td className="px-4 py-3">
+                        <button
+                          onClick={() => toggleCompletionStatus(student._id)}
+                          className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors flex items-center space-x-1 shadow-sm ${
+                            student.completionStatus === 'Completed'
+                              ? 'bg-green-100 text-green-700 hover:bg-green-200 border border-green-200'
+                              : 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200 border border-yellow-200'
+                          }`}
+                        >
+                          {student.completionStatus === 'Completed' ? (
+                            <>
+                              <CheckCircle2 className="w-3 h-3 flex-shrink-0" />
+                              <span>Completed</span>
+                            </>
+                          ) : (
+                            <>
+                              <ClockIcon className="w-3 h-3 flex-shrink-0" />
+                              <span>Incomplete</span>
+                            </>
+                          )}
+                        </button>
+                        {student.completedAt && (
+                          <div className="text-xs text-slate-500 mt-1">
+                            {new Date(student.completedAt).toLocaleDateString()}
+                          </div>
+                        )}
                       </td>
                       <td className="px-4 py-3">
                         <span className={`px-2 py-1 rounded-full text-xs font-medium ${
@@ -720,14 +820,17 @@ function AdminDetails() {
                                 : 'bg-red-100 text-red-700 hover:bg-red-200'
                             }`}
                           >
-                            {student.status === 'Blocked' ? <CheckCircle className="w-3 h-3" /> : <Ban className="w-3 h-3" />}
+                            {student.status === 'Blocked' ? 
+                              <CheckCircle className="w-3 h-3 flex-shrink-0" /> : 
+                              <Ban className="w-3 h-3 flex-shrink-0" />
+                            }
                             <span>{student.status === 'Blocked' ? 'Unblock' : 'Block'}</span>
                           </button>
                           <button 
                             onClick={() => handleDeleteUser(student._id)}
                             className="px-3 py-1.5 bg-red-100 text-red-700 rounded-md text-xs font-medium hover:bg-red-200 transition-colors flex items-center space-x-1 shadow-sm"
                           >
-                            <Trash2 className="w-3 h-3" />
+                            <Trash2 className="w-3 h-3 flex-shrink-0" />
                             <span>Delete</span>
                           </button>
                         </div>
@@ -743,13 +846,29 @@ function AdminDetails() {
             <div className="flex items-center justify-between">
               <p className="text-xs text-slate-600">
                 Showing {filteredStudents.length} of {students.length} applicants
-                {scoreFilter !== 'none' && ` • Sorted by score (${scoreFilter === 'high-to-low' ? 'High to Low' : 'Low to High'})`}
+                {applicantFilter !== 'all' && ` • Filtered by: ${
+                  applicantFilter === 'completed' ? 'Completed Interviews' :
+                  applicantFilter === 'incomplete' ? 'Incomplete Interviews' :
+                  applicantFilter === 'high-to-low' ? 'Score (High to Low)' :
+                  'Score (Low to High)'
+                }`}
               </p>
+              <div className="flex items-center space-x-4 text-xs text-slate-600">
+                <div className="flex items-center space-x-1">
+                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                  <span>{completedCount} Completed</span>
+                </div>
+                <div className="flex items-center space-x-1">
+                  <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
+                  <span>{incompleteCount} Incomplete</span>
+                </div>
+              </div>
             </div>
           </div>
         </div>
       </div>
 
+      {/* Modals remain the same */}
       {showDeleteConfirm && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl shadow-xl max-w-md w-full">

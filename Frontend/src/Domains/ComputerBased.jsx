@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { OrbitControls } from '@react-three/drei';
 import { FaUserCircle } from 'react-icons/fa';
+
 // AI Avatar Components
 const AICore = ({ isSpeaking }) => {
   const coreRef = useRef();

@@ -50,10 +50,18 @@ const userSchema = new mongoose.Schema({
     enum: ['Active', 'Blocked'],
     default: 'Active'
   },
+  completionStatus: {
+    type: String,
+    enum: ['Completed', 'Incomplete'],
+    default: 'Incomplete'
+  },
   interviewId: {
     type: String,
     required: true,
     index: true
+  },
+  completedAt: {
+    type: Date
   },
   createdAt: {
     type: Date,
@@ -113,6 +121,10 @@ const collectionSchema = new mongoose.Schema({
     default: 'Active'
   },
   applicants: {
+    type: Number,
+    default: 0
+  },
+  completedApplicants: {
     type: Number,
     default: 0
   },
@@ -210,11 +222,17 @@ app.get('/api/collections', async (req, res) => {
   try {
     const collections = await Collection.find().sort({ createdAt: -1 });
     
-    // Update applicant count for each collection
+    // Update applicant count and completed count for each collection
     for (let collection of collections) {
       const userCount = await User.countDocuments({ interviewId: collection.interviewId });
-      if (collection.applicants !== userCount) {
+      const completedCount = await User.countDocuments({ 
+        interviewId: collection.interviewId, 
+        completionStatus: 'Completed' 
+      });
+      
+      if (collection.applicants !== userCount || collection.completedApplicants !== completedCount) {
         collection.applicants = userCount;
+        collection.completedApplicants = completedCount;
         await collection.save();
       }
     }
@@ -234,9 +252,15 @@ app.get('/api/collections/:id', async (req, res) => {
       return res.status(404).json({ message: 'Collection not found' });
     }
     
-    // Update applicant count
+    // Update applicant count and completed count
     const userCount = await User.countDocuments({ interviewId: collection.interviewId });
+    const completedCount = await User.countDocuments({ 
+      interviewId: collection.interviewId, 
+      completionStatus: 'Completed' 
+    });
+    
     collection.applicants = userCount;
+    collection.completedApplicants = completedCount;
     await collection.save();
     
     res.json(collection);
@@ -284,7 +308,8 @@ app.post('/api/collections', async (req, res) => {
       endDateTime,
       fileName: fileName || '',
       status: 'Active',
-      applicants: users ? users.length : 0
+      applicants: users ? users.length : 0,
+      completedApplicants: 0
     });
 
     await collection.save();
@@ -293,7 +318,8 @@ app.post('/api/collections', async (req, res) => {
     if (users && users.length > 0) {
       const usersWithInterviewId = users.map(user => ({
         ...user,
-        interviewId: interviewId
+        interviewId: interviewId,
+        completionStatus: user.completionStatus || 'Incomplete'
       }));
       
       await User.insertMany(usersWithInterviewId);
@@ -424,6 +450,7 @@ app.post('/api/collections/:id/users', async (req, res) => {
       password,
       score: score || 0,
       status: status || 'Active',
+      completionStatus: 'Incomplete',
       interviewId: collection.interviewId
     });
 
@@ -440,14 +467,20 @@ app.post('/api/collections/:id/users', async (req, res) => {
   }
 });
 
-// Update user (e.g., block/unblock, update score)
+// Update user (e.g., block/unblock, update score, update completion status)
 app.patch('/api/collections/:collectionId/users/:userId', async (req, res) => {
   try {
-    const { status, score } = req.body;
+    const { status, score, completionStatus } = req.body;
     
     const updateData = {};
     if (status) updateData.status = status;
     if (score !== undefined) updateData.score = score;
+    if (completionStatus) {
+      updateData.completionStatus = completionStatus;
+      if (completionStatus === 'Completed') {
+        updateData.completedAt = new Date();
+      }
+    }
 
     const user = await User.findByIdAndUpdate(
       req.params.userId,
@@ -457,6 +490,19 @@ app.patch('/api/collections/:collectionId/users/:userId', async (req, res) => {
 
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Update completed applicants count in collection if completion status changed
+    if (completionStatus) {
+      const collection = await Collection.findById(req.params.collectionId);
+      if (collection) {
+        const completedCount = await User.countDocuments({ 
+          interviewId: collection.interviewId, 
+          completionStatus: 'Completed' 
+        });
+        collection.completedApplicants = completedCount;
+        await collection.save();
+      }
     }
 
     res.json(user);
@@ -479,6 +525,9 @@ app.delete('/api/collections/:collectionId/users/:userId', async (req, res) => {
     const collection = await Collection.findById(req.params.collectionId);
     if (collection) {
       collection.applicants = Math.max(0, collection.applicants - 1);
+      if (user.completionStatus === 'Completed') {
+        collection.completedApplicants = Math.max(0, collection.completedApplicants - 1);
+      }
       await collection.save();
     }
 
@@ -549,7 +598,8 @@ app.post('/api/auth/login', async (req, res) => {
         name: user.name,
         loginId: user.loginId,
         score: user.score,
-        interviewId: user.interviewId
+        interviewId: user.interviewId,
+        completionStatus: user.completionStatus
       },
       collection: collection
     });
@@ -625,10 +675,23 @@ app.post('/api/interview/results', async (req, res) => {
 
     await interviewResult.save();
 
-    // Update user's score in the User collection
+    // Update user's score and completion status in the User collection
     await User.findByIdAndUpdate(userId, {
-      score: calculatedScore
+      score: calculatedScore,
+      completionStatus: 'Completed',
+      completedAt: new Date()
     });
+
+    // Update completed applicants count in collection
+    const collection = await Collection.findOne({ interviewId });
+    if (collection) {
+      const completedCount = await User.countDocuments({ 
+        interviewId: collection.interviewId, 
+        completionStatus: 'Completed' 
+      });
+      collection.completedApplicants = completedCount;
+      await collection.save();
+    }
 
     res.status(201).json({
       message: 'Interview results saved successfully',
@@ -677,6 +740,7 @@ app.get('/api/statistics', async (req, res) => {
     const totalUsers = await User.countDocuments();
     const activeUsers = await User.countDocuments({ status: 'Active' });
     const blockedUsers = await User.countDocuments({ status: 'Blocked' });
+    const completedInterviews = await User.countDocuments({ completionStatus: 'Completed' });
 
     res.json({
       collections: {
@@ -687,7 +751,8 @@ app.get('/api/statistics', async (req, res) => {
       users: {
         total: totalUsers,
         active: activeUsers,
-        blocked: blockedUsers
+        blocked: blockedUsers,
+        completed: completedInterviews
       }
     });
   } catch (error) {

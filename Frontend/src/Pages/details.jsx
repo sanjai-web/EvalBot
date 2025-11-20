@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   FaEnvelope,
@@ -15,7 +15,8 @@ import {
   FaExpand,
   FaInfoCircle,
   FaUserCircle,
-  FaBriefcase
+  FaBriefcase,
+  FaBan
 } from 'react-icons/fa';
 
 const API_URL = 'http://localhost:5000/api';
@@ -33,6 +34,8 @@ function Details() {
   const [showTermsPopup, setShowTermsPopup] = useState(false);
   const [pdfJsLoaded, setPdfJsLoaded] = useState(false);
   const [error, setError] = useState('');
+  const [userAlreadyCompleted, setUserAlreadyCompleted] = useState(false);
+  const [completionInfo, setCompletionInfo] = useState(null);
   const navigate = useNavigate();
 
   // Load PDF.js library
@@ -183,6 +186,29 @@ function Details() {
     });
   };
 
+  // Check if user has already completed the interview
+  const checkUserCompletionStatus = async (interviewId, email) => {
+    try {
+      const response = await fetch(`${API_URL}/users/${interviewId}/${email}`);
+      if (response.ok) {
+        const userData = await response.json();
+        if (userData.completionStatus === 'Completed') {
+          setUserAlreadyCompleted(true);
+          setCompletionInfo({
+            score: userData.score,
+            completedAt: userData.completedAt,
+            interviewId: userData.interviewId
+          });
+          return true;
+        }
+      }
+      return false;
+    } catch (error) {
+      console.error('Error checking user completion status:', error);
+      return false;
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     
@@ -203,8 +229,20 @@ function Details() {
 
     setIsLoading(true);
     setError('');
+    setUserAlreadyCompleted(false);
 
     try {
+      // First check if user has already completed the interview
+      const alreadyCompleted = await checkUserCompletionStatus(
+        formData.interviewId.toUpperCase(),
+        formData.email.toLowerCase()
+      );
+
+      if (alreadyCompleted) {
+        setIsLoading(false);
+        return;
+      }
+
       // Extract resume text
       const resumeText = await extractTextFromPDF(formData.resume);
       console.log('📝 Extracted PDF text:', resumeText);
@@ -226,6 +264,18 @@ function Details() {
 
       if (!loginResponse.ok) {
         throw new Error(loginData.message || 'Authentication failed');
+      }
+
+      // Double-check completion status from login response
+      if (loginData.user.completionStatus === 'Completed') {
+        setUserAlreadyCompleted(true);
+        setCompletionInfo({
+          score: loginData.user.score,
+          completedAt: loginData.user.completedAt,
+          interviewId: loginData.user.interviewId
+        });
+        setIsLoading(false);
+        return;
       }
 
       // Prepare interview data
@@ -264,7 +314,7 @@ function Details() {
       {/* Enhanced Background Pattern */}
       <div className="absolute inset-0 opacity-100">
         {/* Main geometric pattern */}
-        <div 
+        {/* <div 
           className="absolute inset-0 opacity-[0.03]"
           style={{
             backgroundImage: `
@@ -278,7 +328,7 @@ function Details() {
             backgroundSize: '80px 140px',
             backgroundPosition: '0 0, 0 0, 40px 70px, 40px 70px, 0 0, 40px 70px'
           }}
-        ></div>
+        ></div> */}
         
         {/* Subtle dot pattern overlay */}
         <div 
@@ -311,6 +361,45 @@ function Details() {
             </div>
           )}
 
+          {/* Interview Already Completed Message */}
+          {userAlreadyCompleted && completionInfo && (
+            <div className="mb-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+              <div className="flex items-start space-x-3">
+                <div className="flex-shrink-0">
+                  <FaBan className="w-5 h-5 text-yellow-600 mt-0.5" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-sm font-semibold text-yellow-800 mb-2">
+                    Interview Already Completed
+                  </h3>
+                  <p className="text-sm text-yellow-700 mb-3">
+                    You have already completed this interview. Each candidate can only attempt the interview once.
+                  </p>
+                  <div className="bg-white p-3 rounded border border-yellow-100">
+                    <div className="grid grid-cols-2 gap-2 text-sm">
+                      <div>
+                        <span className="font-medium text-yellow-700">Interview ID:</span>
+                        <div className="text-yellow-600 font-mono">{completionInfo.interviewId}</div>
+                      </div>
+                      {completionInfo.completedAt && (
+                        <div className="col-span-2">
+                          <span className="font-medium text-yellow-700">Completed On:</span>
+                          <div className="text-yellow-600">
+                            {new Date(completionInfo.completedAt).toLocaleDateString()} at {' '}
+                            {new Date(completionInfo.completedAt).toLocaleTimeString()}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  <p className="text-xs text-yellow-600 mt-2">
+                    If you believe this is an error, please contact the administrator.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
           <form className="space-y-4" onSubmit={handleSubmit}>
             {/* Interview ID Input */}
             <div>
@@ -328,6 +417,7 @@ function Details() {
                 className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 bg-white uppercase"
                 placeholder="Enter Interview ID"
                 style={{ textTransform: 'uppercase' }}
+                disabled={userAlreadyCompleted}
               />
             </div>
 
@@ -346,6 +436,7 @@ function Details() {
                 onChange={handleChange}
                 className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 bg-white"
                 placeholder="your.email@example.com"
+                disabled={userAlreadyCompleted}
               />
             </div>
 
@@ -365,6 +456,7 @@ function Details() {
                 onChange={handleChange}
                 className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 bg-white"
                 placeholder="Enter your password"
+                disabled={userAlreadyCompleted}
               />
             </div>
 
@@ -381,18 +473,19 @@ function Details() {
                     : formData.resume 
                     ? 'border-green-500 bg-green-50' 
                     : 'border-gray-300 hover:border-blue-400 hover:bg-gray-50'
-                }`}
-                onDragOver={handleDragOver}
-                onDragLeave={handleDragLeave}
-                onDrop={handleDrop}
+                } ${userAlreadyCompleted ? 'opacity-50 cursor-not-allowed' : ''}`}
+                onDragOver={userAlreadyCompleted ? undefined : handleDragOver}
+                onDragLeave={userAlreadyCompleted ? undefined : handleDragLeave}
+                onDrop={userAlreadyCompleted ? undefined : handleDrop}
               >
                 <input
                   id="resume"
                   name="resume"
                   type="file"
                   accept=".pdf"
-                  onChange={handleChange}
+                  onChange={userAlreadyCompleted ? undefined : handleChange}
                   className="hidden"
+                  disabled={userAlreadyCompleted}
                 />
                 
                 {formData.resume ? (
@@ -403,13 +496,15 @@ function Details() {
                     <p className="text-gray-500 text-xs mb-3">
                       {(formData.resume.size / 1024).toFixed(2)} KB
                     </p>
-                    <label
-                      htmlFor="resume"
-                      className="inline-flex items-center px-3 py-1 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 cursor-pointer transition-colors duration-200"
-                    >
-                      <FaCloudUploadAlt className="w-3 h-3 mr-1" />
-                      Change File
-                    </label>
+                    {!userAlreadyCompleted && (
+                      <label
+                        htmlFor="resume"
+                        className="inline-flex items-center px-3 py-1 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 cursor-pointer transition-colors duration-200"
+                      >
+                        <FaCloudUploadAlt className="w-3 h-3 mr-1" />
+                        Change File
+                      </label>
+                    )}
                   </div>
                 ) : (
                   <div className="text-center">
@@ -418,20 +513,22 @@ function Details() {
                       <span className="font-medium">Click to upload</span> or drag and drop
                     </p>
                     <p className="text-gray-500 text-xs mb-3">PDF only (Max 5MB)</p>
-                    <label
-                      htmlFor="resume"
-                      className="inline-flex items-center px-3 py-1 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 cursor-pointer transition-colors duration-200"
-                    >
-                      <FaUpload className="w-3 h-3 mr-1" />
-                      Choose File
-                    </label>
+                    {!userAlreadyCompleted && (
+                      <label
+                        htmlFor="resume"
+                        className="inline-flex items-center px-3 py-1 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 cursor-pointer transition-colors duration-200"
+                      >
+                        <FaUpload className="w-3 h-3 mr-1" />
+                        Choose File
+                      </label>
+                    )}
                   </div>
                 )}
               </div>
             </div>
 
             {/* Terms and Conditions Checkbox */}
-            <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
+            <div className={`bg-gray-50 border border-gray-200 rounded-lg p-3 ${userAlreadyCompleted ? 'opacity-50' : ''}`}>
               <div className="flex items-start">
                 <div className="flex items-center h-4">
                   <input
@@ -439,12 +536,13 @@ function Details() {
                     name="terms"
                     type="checkbox"
                     checked={termsAccepted}
-                    onChange={handleCheckboxClick}
+                    onChange={userAlreadyCompleted ? undefined : handleCheckboxClick}
                     className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 cursor-pointer"
+                    disabled={userAlreadyCompleted}
                   />
                 </div>
                 <div className="ml-2">
-                  <label htmlFor="terms" className="text-sm text-gray-900 cursor-pointer">
+                  <label htmlFor="terms" className={`text-sm text-gray-900 ${userAlreadyCompleted ? 'cursor-not-allowed' : 'cursor-pointer'}`}>
                     I accept the terms and conditions
                   </label>
                 </div>
@@ -455,14 +553,21 @@ function Details() {
             <div className="pt-2">
               <button
                 type="submit"
-                disabled={isLoading || !formData.resume || !termsAccepted}
-                className={`w-full flex justify-center items-center py-2 px-4 text-sm font-semibold rounded-lg text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-300 ${
-                  isLoading || !formData.resume || !termsAccepted
-                    ? 'opacity-50 cursor-not-allowed' 
-                    : 'hover:shadow-md transform hover:-translate-y-0.5'
-                } shadow-sm`}
+                disabled={isLoading || !formData.resume || !termsAccepted || userAlreadyCompleted}
+                className={`w-full flex justify-center items-center py-2 px-4 text-sm font-semibold rounded-lg text-white transition-all duration-300 ${
+                  userAlreadyCompleted
+                    ? 'bg-gray-400 cursor-not-allowed'
+                    : isLoading || !formData.resume || !termsAccepted
+                    ? 'bg-blue-400 cursor-not-allowed opacity-50' 
+                    : 'bg-blue-600 hover:bg-blue-700 hover:shadow-md transform hover:-translate-y-0.5 shadow-sm'
+                }`}
               >
-                {isLoading ? (
+                {userAlreadyCompleted ? (
+                  <>
+                    <FaBan className="w-3 h-3 mr-2" />
+                    Interview Completed
+                  </>
+                ) : isLoading ? (
                   <>
                     <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
@@ -542,6 +647,12 @@ function Details() {
                       color: 'indigo',
                       title: 'Stable Connection',
                       description: 'Reliable internet connection is essential.'
+                    },
+                    {
+                      icon: FaBan,
+                      color: 'red',
+                      title: 'Single Attempt Only',
+                      description: 'Each candidate can attempt the interview only once.'
                     }
                   ].map((item, index) => (
                     <div key={index} className="flex items-start space-x-2 p-2 bg-gray-50 rounded-lg border border-gray-200">
