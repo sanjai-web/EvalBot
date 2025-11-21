@@ -471,6 +471,7 @@ const Interview = () => {
   const [showEndInterviewButton, setShowEndInterviewButton] = useState(false);
   const [fullscreenInitialized, setFullscreenInitialized] = useState(false);
   const [micPermissionGranted, setMicPermissionGranted] = useState(false);
+  const [interviewCompleted, setInterviewCompleted] = useState(false);
   
   // Code Editor States
   const [code, setCode] = useState('');
@@ -1408,6 +1409,7 @@ Output:`;
         setSpeechToText("");
         setCode("");
         setShowEndInterviewButton(true);
+        setInterviewCompleted(true);
         
         if (result && result.isCandidateQuestion && result.evaluation) {
           console.log("Speaking AI response:", result.evaluation);
@@ -1449,6 +1451,10 @@ Output:`;
         if (questions[nextIndex].category === "Closing") {
           setShowEndInterviewButton(false);
         }
+      } else {
+        // All questions completed, show end interview button
+        setShowEndInterviewButton(true);
+        setInterviewCompleted(true);
       }
     }, 1000);
   };
@@ -1493,6 +1499,10 @@ Output:`;
       if (questions[nextIndex].category === "Closing") {
         setShowEndInterviewButton(false);
       }
+    } else {
+      // All questions completed, show end interview button
+      setShowEndInterviewButton(true);
+      setInterviewCompleted(true);
     }
   };
 
@@ -1525,6 +1535,7 @@ Output:`;
         setAnswer("");
         setSpeechToText("");
         setShowEndInterviewButton(true);
+        setInterviewCompleted(true);
         
         if (result && result.isCandidateQuestion && result.evaluation) {
           console.log("Speaking AI response:", result.evaluation);
@@ -1564,6 +1575,10 @@ Output:`;
         if (questions[nextIndex].category === "Closing") {
           setShowEndInterviewButton(false);
         }
+      } else {
+        // All questions completed, show end interview button
+        setShowEndInterviewButton(true);
+        setInterviewCompleted(true);
       }
     }, 1000);
   };
@@ -1824,201 +1839,245 @@ Output:`;
         </div>
 
         <div className="flex-1 flex flex-col p-4 space-y-4">
-          <div className="bg-gradient-to-r from-purple-500/20 to-pink-500/20 backdrop-blur-sm rounded-2xl border border-purple-500/30 p-6">
-            <div className="flex items-start space-x-4">
-              <div className="flex-shrink-0">
-                <div className="w-12 h-12 bg-purple-500/30 rounded-full flex items-center justify-center">
-                  <svg className="w-6 h-6 text-purple-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
+          {/* Evaluation Display */}
+          {evaluation && (
+            <div >
+              {/* <div className="flex items-start space-x-4">
+                <div className="flex-shrink-0">
+                  <div className="w-12 h-12 bg-blue-500/30 rounded-full flex items-center justify-center">
+                    <svg className="w-6 h-6 text-blue-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  </div>
+                </div>
+                <div className="flex-1">
+                  <h3 className="font-semibold text-blue-300 mb-2">AI Evaluation:</h3>
+                  <p className="text-lg leading-relaxed whitespace-pre-wrap">{evaluation}</p>
+                </div>
+              </div> */}
+            </div>
+          )}
+
+          {interviewCompleted ? (
+            <div className="flex-1 bg-gradient-to-br from-green-500/10 to-blue-500/10 backdrop-blur-sm rounded-2xl border border-green-500/30 p-8 flex flex-col items-center justify-center text-center">
+              <div className="w-24 h-24 bg-green-500/20 rounded-full flex items-center justify-center mb-6">
+                <svg className="w-12 h-12 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              
+              <h2 className="text-3xl font-bold text-green-400 mb-4">Interview Completed!</h2>
+              <p className="text-xl text-gray-300 mb-2">You've answered all the questions.</p>
+              <p className="text-lg text-gray-400 mb-8">Thank you for completing the interview.</p>
+              
+              <div className="grid grid-cols-2 gap-4 mb-8 w-full max-w-md">
+                <div className="bg-blue-500/20 p-4 rounded-lg border border-blue-500/30">
+                  <div className="text-2xl font-bold text-blue-400">{conversationHistory.filter(item => !item.isCandidateQuestion).length}</div>
+                  <div className="text-sm text-blue-300">Questions Answered</div>
+                </div>
+                <div className="bg-purple-500/20 p-4 rounded-lg border border-purple-500/30">
+                  <div className="text-2xl font-bold text-purple-400">{formatTime(timer)}</div>
+                  <div className="text-sm text-purple-300">Interview Duration</div>
                 </div>
               </div>
               
-              <div className="flex-1">
-                <div className="flex items-center space-x-2 mb-2">
-                  <h3 className="font-semibold text-purple-300">AI Interviewer asks:</h3>
-                  {currentCategory && (
-                    <span className="text-xs bg-purple-600/30 px-2 py-1 rounded-full">
-                      {currentCategory}
-                    </span>
-                  )}
-                  {awaitingFollowUp && (
-                    <span className="text-xs bg-orange-600/30 px-2 py-1 rounded-full">
-                      Follow-up
-                    </span>
-                  )}
-                  {aiSpeaking && (
-                    <div className="flex items-center space-x-1">
-                      <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-                      <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse delay-75"></div>
-                      <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse delay-150"></div>
-                      <span className="text-xs text-green-400 ml-1">Speaking</span>
-                    </div>
-                  )}
-                  {isGeneratingQuestions && (
-                    <div className="flex items-center space-x-1">
-                      <div className="w-2 h-2 bg-blue-400 rounded-full animate-pulse"></div>
-                      <span className="text-xs text-blue-400 ml-1">Generating Questions...</span>
-                    </div>
-                  )}
-                </div>
-                {isGeneratingQuestions ? (
-                  <div className="flex items-center space-x-2">
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-purple-400"></div>
-                    <p className="text-lg leading-relaxed text-gray-400">
-                      Generating personalized structured interview questions based on your resume...
-                    </p>
-                  </div>
-                ) : (
-                  <p className="text-lg leading-relaxed">{currentQuestion}</p>
-                )}
-              </div>
+              <button 
+                onClick={handleEndInterview}
+                className="px-8 py-4 bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white font-bold text-lg rounded-xl transition-all shadow-lg hover:shadow-green-500/25"
+              >
+                🏁 View Detailed Results
+              </button>
             </div>
-          </div>
-
-          {/* Conditional Rendering: Code Editor for Coding Questions, Regular Answer for Others */}
-          {isCodingQuestion ? (
-            <CodeEditor
-              code={code}
-              onCodeChange={setCode}
-              selectedLanguage={selectedLanguage}
-              onLanguageChange={setSelectedLanguage}
-              onRunCode={handleRunCode}
-              output={output}
-              isRunning={isRunning}
-              onSubmitCode={handleSubmitCode}
-              onSkipQuestion={handleSkipQuestion}
-            />
           ) : (
-            <div className="flex-1 bg-black/30 backdrop-blur-sm rounded-2xl border border-gray-500/30 p-4 flex flex-col">
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center space-x-2">
-                  <h3 className="font-semibold text-gray-300">Your Answer</h3>
-                  {currentCategory === "Closing" && (
-                    <span className="text-xs bg-green-500/20 px-3 py-1 rounded-full border border-green-500/30 text-green-300">
-                      Closing Section - Ask your questions!
-                    </span>
-                  )}
-                  {candidateSpeaking && (
-                    <div className="flex items-center space-x-1">
-                      <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-                      <span className="text-xs text-green-400">Listening</span>
+            <>
+              <div className="bg-gradient-to-r from-purple-500/20 to-pink-500/20 backdrop-blur-sm rounded-2xl border border-purple-500/30 p-6">
+                <div className="flex items-start space-x-4">
+                  <div className="flex-shrink-0">
+                    <div className="w-12 h-12 bg-purple-500/30 rounded-full flex items-center justify-center">
+                      <svg className="w-6 h-6 text-purple-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
                     </div>
-                  )}
-                  {!isSpeechSupported && (
-                    <span className="text-xs text-red-400 ml-2">(Not supported)</span>
-                  )}
-                  {!micPermissionGranted && isSpeechSupported && (
-                    <span className="text-xs text-yellow-400 ml-2">(Mic permission required)</span>
-                  )}
-                </div>
-                <div className="text-xs text-gray-400">
-                  {answer.length} characters
-                </div>
-              </div>
-
-              {/* Speech Error Display */}
-              {speechError && (
-                <div className="mb-3 p-3 bg-red-500/20 border border-red-500/30 rounded-lg">
-                  <p className="text-sm text-red-300 font-medium">
-                    ⚠️ {speechError}
-                  </p>
-                </div>
-              )}
-
-              {/* Speech Recognition Status */}
-              {candidateSpeaking && speechToText && (
-                <div className="mb-3 p-3 bg-green-500/20 border border-green-500/30 rounded-lg">
-                  <div className="flex items-center space-x-2 mb-2">
-                    <div className="flex space-x-1">
-                      <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-                      <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse delay-75"></div>
-                      <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse delay-150"></div>
-                    </div>
-                    <span className="text-sm text-green-300 font-medium">Listening...</span>
                   </div>
-                  <p className="text-sm text-gray-300 whitespace-pre-wrap">
-                    {speechToText}
-                  </p>
-                  {speechToText.includes('[') && (
-                    <p className="text-xs text-green-400 mt-1">
-                      Words in brackets are being processed in real-time...
-                    </p>
+                  
+                  <div className="flex-1">
+                    <div className="flex items-center space-x-2 mb-2">
+                      <h3 className="font-semibold text-purple-300">AI Interviewer asks:</h3>
+                      {currentCategory && (
+                        <span className="text-xs bg-purple-600/30 px-2 py-1 rounded-full">
+                          {currentCategory}
+                        </span>
+                      )}
+                      {awaitingFollowUp && (
+                        <span className="text-xs bg-orange-600/30 px-2 py-1 rounded-full">
+                          Follow-up
+                        </span>
+                      )}
+                      {aiSpeaking && (
+                        <div className="flex items-center space-x-1">
+                          <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                          <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse delay-75"></div>
+                          <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse delay-150"></div>
+                          <span className="text-xs text-green-400 ml-1">Speaking</span>
+                        </div>
+                      )}
+                      {isGeneratingQuestions && (
+                        <div className="flex items-center space-x-1">
+                          <div className="w-2 h-2 bg-blue-400 rounded-full animate-pulse"></div>
+                          <span className="text-xs text-blue-400 ml-1">Generating Questions...</span>
+                        </div>
+                      )}
+                    </div>
+                    {isGeneratingQuestions ? (
+                      <div className="flex items-center space-x-2">
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-purple-400"></div>
+                        <p className="text-lg leading-relaxed text-gray-400">
+                          Generating personalized structured interview questions based on your resume...
+                        </p>
+                      </div>
+                    ) : (
+                      <p className="text-lg leading-relaxed">{currentQuestion}</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Conditional Rendering: Code Editor for Coding Questions, Regular Answer for Others */}
+              {isCodingQuestion ? (
+                <CodeEditor
+                  code={code}
+                  onCodeChange={setCode}
+                  selectedLanguage={selectedLanguage}
+                  onLanguageChange={setSelectedLanguage}
+                  onRunCode={handleRunCode}
+                  output={output}
+                  isRunning={isRunning}
+                  onSubmitCode={handleSubmitCode}
+                  onSkipQuestion={handleSkipQuestion}
+                />
+              ) : (
+                <div className="flex-1 bg-black/30 backdrop-blur-sm rounded-2xl border border-gray-500/30 p-4 flex flex-col">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center space-x-2">
+                      <h3 className="font-semibold text-gray-300">Your Answer</h3>
+                      {currentCategory === "Closing" && (
+                        <span className="text-xs bg-green-500/20 px-3 py-1 rounded-full border border-green-500/30 text-green-300">
+                          Closing Section - Ask your questions!
+                        </span>
+                      )}
+                      {candidateSpeaking && (
+                        <div className="flex items-center space-x-1">
+                          <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                          <span className="text-xs text-green-400">Listening</span>
+                        </div>
+                      )}
+                      {!isSpeechSupported && (
+                        <span className="text-xs text-red-400 ml-2">(Not supported)</span>
+                      )}
+                      {!micPermissionGranted && isSpeechSupported && (
+                        <span className="text-xs text-yellow-400 ml-2">(Mic permission required)</span>
+                      )}
+                    </div>
+                    <div className="text-xs text-gray-400">
+                      {answer.length} characters
+                    </div>
+                  </div>
+
+                  {/* Speech Error Display */}
+                  {speechError && (
+                    <div className="mb-3 p-3 bg-red-500/20 border border-red-500/30 rounded-lg">
+                      <p className="text-sm text-red-300 font-medium">
+                        ⚠️ {speechError}
+                      </p>
+                    </div>
                   )}
+
+                  {/* Speech Recognition Status */}
+                  {candidateSpeaking && speechToText && (
+                    <div className="mb-3 p-3 bg-green-500/20 border border-green-500/30 rounded-lg">
+                      <div className="flex items-center space-x-2 mb-2">
+                        <div className="flex space-x-1">
+                          <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                          <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse delay-75"></div>
+                          <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse delay-150"></div>
+                        </div>
+                        <span className="text-sm text-green-300 font-medium">Listening...</span>
+                      </div>
+                      <p className="text-sm text-gray-300 whitespace-pre-wrap">
+                        {speechToText}
+                      </p>
+                      {speechToText.includes('[') && (
+                        <p className="text-xs text-green-400 mt-1">
+                          Words in brackets are being processed in real-time...
+                        </p>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Textarea with Microphone Button */}
+                  <div className="flex-1 relative">
+                    <textarea
+                      value={answer}
+                      onChange={(e) => setAnswer(e.target.value)}
+                      placeholder="Type your answer here. You can also use voice input by clicking the microphone button."
+                      className="w-full h-full bg-black/50 text-white p-4 rounded-xl border border-white/10 focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 resize-none font-mono text-sm pr-16"
+                    />
+                    
+                    {/* Round Microphone Button */}
+                    <button
+                      onClick={toggleVoiceRecognition}
+                      disabled={!isSpeechSupported}
+                      className={`absolute bottom-4 right-4 w-12 h-12 rounded-full flex items-center justify-center transition-all ${
+                        candidateSpeaking 
+                          ? 'bg-red-500/80 border border-red-500 text-white shadow-lg' 
+                          : isSpeechSupported
+                          ? 'bg-green-500/80 border border-green-500 text-white hover:bg-green-600 shadow-lg hover:scale-105'
+                          : 'bg-gray-500/80 border border-gray-500 text-gray-300 cursor-not-allowed'
+                      }`}
+                    >
+                      {candidateSpeaking ? 
+                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 10a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z" />
+                        </svg>
+                        :
+                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+                        </svg>
+                      }
+                    </button>
+                  </div>
+                  
+                  <div className="flex justify-between items-center mt-4">
+                    <div className="text-xs text-gray-400">
+                      Press <kbd className="px-2 py-1 bg-black/50 rounded text-xs">Ctrl+Enter</kbd> to submit
+                    </div>
+                    
+                    <div className="flex space-x-3">
+                      {/* Skip Question Button */}
+                      <button 
+                        onClick={handleSkipQuestion}
+                        className="px-6 py-2 rounded-lg font-medium transition-all bg-gradient-to-r from-gray-600 to-gray-700 hover:from-gray-700 hover:to-gray-800 shadow-lg border border-gray-500/30"
+                      >
+                        Skip Question →
+                      </button>
+                      
+                      <button 
+                        onClick={handleSubmitAnswer}
+                        disabled={!answer.trim()}
+                        className={`px-6 py-2 rounded-lg font-medium transition-all ${
+                          answer.trim()
+                            ? 'bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 shadow-lg' 
+                            : 'bg-gray-700 cursor-not-allowed opacity-50'
+                        }`}
+                      >
+                        {currentCategory === "Closing" ? 'Submit & Continue →' : questionNumber < questions.length ? 'Submit Answer →' : 'Submit Answer →'}
+                      </button>
+                    </div>
+                  </div>
                 </div>
               )}
-
-              {/* Textarea with Microphone Button */}
-              <div className="flex-1 relative">
-                <textarea
-                  value={answer}
-                  onChange={(e) => setAnswer(e.target.value)}
-                  placeholder="Type your answer here. You can also use voice input by clicking the microphone button."
-                  className="w-full h-full bg-black/50 text-white p-4 rounded-xl border border-white/10 focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 resize-none font-mono text-sm pr-16"
-                />
-                
-                {/* Round Microphone Button */}
-                <button
-                  onClick={toggleVoiceRecognition}
-                  disabled={!isSpeechSupported}
-                  className={`absolute bottom-4 right-4 w-12 h-12 rounded-full flex items-center justify-center transition-all ${
-                    candidateSpeaking 
-                      ? 'bg-red-500/80 border border-red-500 text-white shadow-lg' 
-                      : isSpeechSupported
-                      ? 'bg-green-500/80 border border-green-500 text-white hover:bg-green-600 shadow-lg hover:scale-105'
-                      : 'bg-gray-500/80 border border-gray-500 text-gray-300 cursor-not-allowed'
-                  }`}
-                >
-                  {candidateSpeaking ? 
-                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 10a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z" />
-                    </svg>
-                    :
-                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
-                    </svg>
-                  }
-                </button>
-              </div>
-              
-              <div className="flex justify-between items-center mt-4">
-                <div className="text-xs text-gray-400">
-                  Press <kbd className="px-2 py-1 bg-black/50 rounded text-xs">Ctrl+Enter</kbd> to submit
-                </div>
-                
-                <div className="flex space-x-3">
-                  {/* Skip Question Button */}
-                  <button 
-                    onClick={handleSkipQuestion}
-                    className="px-6 py-2 rounded-lg font-medium transition-all bg-gradient-to-r from-gray-600 to-gray-700 hover:from-gray-700 hover:to-gray-800 shadow-lg border border-gray-500/30"
-                  >
-                    Skip Question →
-                  </button>
-                  
-                  {showEndInterviewButton && currentCategory === "Closing" && (
-                    <button 
-                      onClick={handleEndInterview}
-                      className="px-6 py-2 rounded-lg font-medium transition-all bg-gradient-to-r from-red-600 to-orange-600 hover:from-red-700 hover:to-orange-700 shadow-lg"
-                    >
-                      🏁 End Interview
-                    </button>
-                  )}
-                  
-                  <button 
-                    onClick={handleSubmitAnswer}
-                    disabled={!answer.trim()}
-                    className={`px-6 py-2 rounded-lg font-medium transition-all ${
-                      answer.trim()
-                        ? 'bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 shadow-lg' 
-                        : 'bg-gray-700 cursor-not-allowed opacity-50'
-                    }`}
-                  >
-                    {currentCategory === "Closing" ? 'Submit & Continue →' : questionNumber < questions.length ? 'Submit Answer →' : 'Submit Answer →'}
-                  </button>
-                </div>
-              </div>
-            </div>
+            </>
           )}
         </div>
       </div>
