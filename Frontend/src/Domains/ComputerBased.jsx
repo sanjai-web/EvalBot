@@ -195,7 +195,9 @@ const CodeEditor = ({
     { value: 'java', label: 'Java' },
     { value: 'cpp', label: 'C++' },
     { value: 'c', label: 'C' },
-    { value: 'javascript', label: 'JavaScript' }
+    { value: 'javascript', label: 'JavaScript' },
+    { value: 'MySQL', label: 'MySQL' },
+    { value: 'MongoDB', label: 'MongoDB' }
   ];
 
   const handleCodeChange = (e) => {
