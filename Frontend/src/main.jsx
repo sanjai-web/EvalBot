@@ -13,6 +13,7 @@ import Result from "./Pages/result";
 // Domains
 import Interview from "./Domains/ComputerBased";
 import Rolebased from "./Domains/RoleBased";
+import CodeEditor from "./Domains/CodeEditor";
 
 function Layout() {
   const location = useLocation();
@@ -22,7 +23,7 @@ function Layout() {
   const isAuthPage = authRoutes.includes(location.pathname);
 
   // Hide navbar for interview page
-  const hideNavbarRoutes = ["/ComputerBased","/rolebased"];
+  const hideNavbarRoutes = ["/ComputerBased","/rolebased","/codeeditor"];
   const shouldHideNavbar = hideNavbarRoutes.includes(location.pathname);
 
   return (
@@ -37,6 +38,7 @@ function Layout() {
           {/* Domains */}
           <Route path="/ComputerBased" element={<Interview />} />
           <Route path="/rolebased" element={<Rolebased />} />
+          <Route path="/codeeditor" element={<CodeEditor />} />
         </Routes>
       </div>
     </>

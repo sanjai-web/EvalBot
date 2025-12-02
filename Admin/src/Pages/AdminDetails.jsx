@@ -3,7 +3,8 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { 
   ChevronRight, Calendar, FileText, Building2, Upload, Edit, Trash2, Mail, 
   Phone, User, Search, Filter, Eye, Ban, CheckCircle, Hash, X, Save, Plus, Clock,
-  Star, Loader2, Download, ArrowUp, ArrowDown, CheckCircle2, Clock as ClockIcon
+  Star, Loader2, Download, ArrowUp, ArrowDown, CheckCircle2, Clock as ClockIcon,
+  Timer
 } from 'lucide-react';
 
 const API_URL = 'http://localhost:5000/api';
@@ -348,6 +349,11 @@ function AdminDetails() {
     return new Date(`${year}-${month}-${day}T${hours}:${minutes}`);
   };
 
+  // Check if collection is Quiz or Code Test domain
+  const isTimedTest = ['Quiz', 'Code Test'].includes(editedCollection?.domain);
+  // Check if collection is Computer Science or Role Based domain
+  const isLevelBased = ['Computer Science', 'Role Based'].includes(editedCollection?.domain);
+
   if (!collection) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50">
@@ -392,7 +398,7 @@ function AdminDetails() {
       </header>
 
       <div className="max-w-7xl mx-auto px-6 py-8 space-y-8">
-        {/* Collection details section remains the same */}
+        {/* Collection details section */}
         <div className="bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden">
           <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border-b border-slate-200 p-6">
             <div className="flex items-start justify-between">
@@ -424,23 +430,27 @@ function AdminDetails() {
                   {interviewStatus.status}
                 </span>
                 {isEditing ? (
-                  <select
-                    value={editedCollection.level}
-                    onChange={(e) => handleInputChange('level', e.target.value)}
-                    className="px-3 py-1 rounded-full text-sm font-medium border focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  >
-                    <option value="Beginner">Beginner</option>
-                    <option value="Intermediate">Intermediate</option>
-                    <option value="Advanced">Advanced</option>
-                  </select>
+                  isLevelBased ? (
+                    <select
+                      value={editedCollection.level}
+                      onChange={(e) => handleInputChange('level', e.target.value)}
+                      className="px-3 py-1 rounded-full text-sm font-medium border focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    >
+                      <option value="Beginner">Beginner</option>
+                      <option value="Intermediate">Intermediate</option>
+                      <option value="Advanced">Advanced</option>
+                    </select>
+                  ) : null
                 ) : (
-                  <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-                    levelConfig[editedCollection.level].bgColor
-                  } ${levelConfig[editedCollection.level].textColor} ${
-                    levelConfig[editedCollection.level].borderColor
-                  }`}>
-                    {levelConfig[editedCollection.level].icon} {editedCollection.level}
-                  </span>
+                  isLevelBased && (
+                    <span className={`px-3 py-1 rounded-full text-sm font-medium ${
+                      levelConfig[editedCollection.level].bgColor
+                    } ${levelConfig[editedCollection.level].textColor} ${
+                      levelConfig[editedCollection.level].borderColor
+                    }`}>
+                      {levelConfig[editedCollection.level].icon} {editedCollection.level}
+                    </span>
+                  )
                 )}
               </div>
             </div>
@@ -513,6 +523,8 @@ function AdminDetails() {
                     >
                       <option value="Computer Science">Computer Science</option>
                       <option value="Role Based">Role Based</option>
+                      <option value="Quiz">Quiz</option>
+                      <option value="Code Test">Code Test</option>
                     </select>
                   ) : (
                     editedCollection.domain
@@ -544,32 +556,61 @@ function AdminDetails() {
                 color="purple" 
               />
 
-              <ColorDetailItem 
-                icon={Star} 
-                label="Interview Level" 
-                value={
-                  isEditing ? (
-                    <select
-                      value={editedCollection.level}
-                      onChange={(e) => handleInputChange('level', e.target.value)}
-                      className="w-full px-2 py-1 border border-slate-300 rounded text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    >
-                      <option value="Beginner">Beginner</option>
-                      <option value="Intermediate">Intermediate</option>
-                      <option value="Advanced">Advanced</option>
-                    </select>
-                  ) : (
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                      levelConfig[editedCollection.level].bgColor
-                    } ${levelConfig[editedCollection.level].textColor} ${
-                      levelConfig[editedCollection.level].borderColor
-                    }`}>
-                      {levelConfig[editedCollection.level].icon} {editedCollection.level}
-                    </span>
-                  )
-                } 
-                color="yellow" 
-              />
+              {/* Conditional rendering for Level or Time Limit */}
+              {isLevelBased ? (
+                <ColorDetailItem 
+                  icon={Star} 
+                  label="Interview Level" 
+                  value={
+                    isEditing ? (
+                      <select
+                        value={editedCollection.level}
+                        onChange={(e) => handleInputChange('level', e.target.value)}
+                        className="w-full px-2 py-1 border border-slate-300 rounded text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      >
+                        <option value="Beginner">Beginner</option>
+                        <option value="Intermediate">Intermediate</option>
+                        <option value="Advanced">Advanced</option>
+                      </select>
+                    ) : (
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                        levelConfig[editedCollection.level].bgColor
+                      } ${levelConfig[editedCollection.level].textColor} ${
+                        levelConfig[editedCollection.level].borderColor
+                      }`}>
+                        {levelConfig[editedCollection.level].icon} {editedCollection.level}
+                      </span>
+                    )
+                  } 
+                  color="yellow" 
+                />
+              ) : isTimedTest ? (
+                <ColorDetailItem 
+                  icon={Timer} 
+                  label="Time Limit" 
+                  value={
+                    isEditing ? (
+                      <div className="relative">
+                        <input
+                          type="number"
+                          value={editedCollection.timeLimit || ''}
+                          onChange={(e) => handleInputChange('timeLimit', parseInt(e.target.value) || 0)}
+                          className="w-full px-2 py-1 border border-slate-300 rounded text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          placeholder="Enter time limit"
+                          min="1"
+                          max="300"
+                        />
+                      </div>
+                    ) : (
+                      <div className="flex items-center space-x-2">
+                        <Timer className="w-4 h-4 text-slate-600" />
+                        <span className="font-semibold">{editedCollection.timeLimit} minutes</span>
+                      </div>
+                    )
+                  } 
+                  color="orange" 
+                />
+              ) : null}
             </div>
 
             <div className="border-t border-slate-200 pt-6">
@@ -868,7 +909,7 @@ function AdminDetails() {
         </div>
       </div>
 
-      {/* Modals remain the same */}
+      {/* Delete Confirmation Modal */}
       {showDeleteConfirm && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl shadow-xl max-w-md w-full">
@@ -901,6 +942,7 @@ function AdminDetails() {
         </div>
       )}
 
+      {/* Add Applicant Modal */}
       {showAddApplicant && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto">
@@ -999,7 +1041,8 @@ function ColorDetailItem({ icon: Icon, label, value, color = "blue" }) {
     green: 'bg-green-100 text-green-600',
     purple: 'bg-purple-100 text-purple-600',
     red: 'bg-red-100 text-red-600',
-    yellow: 'bg-yellow-100 text-yellow-600'
+    yellow: 'bg-yellow-100 text-yellow-600',
+    orange: 'bg-orange-100 text-orange-600'
   };
 
   return (

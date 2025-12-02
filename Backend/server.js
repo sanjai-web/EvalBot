@@ -69,7 +69,7 @@ const userSchema = new mongoose.Schema({
   }
 });
 
-// Collection Schema (Interview Details)
+// Collection Schema (Interview Details) - UPDATED
 const collectionSchema = new mongoose.Schema({
   interviewId: {
     type: String,
@@ -95,13 +95,26 @@ const collectionSchema = new mongoose.Schema({
   },
   domain: {
     type: String,
-    enum: ['Computer Science', 'Role Based'],
+    enum: ['Computer Science', 'Role Based', 'Quiz', 'Code Test'],
     required: true
   },
   level: {
     type: String,
     enum: ['Beginner', 'Intermediate', 'Advanced'],
-    required: true
+    required: function() {
+      // Level is required only for Computer Science and Role Based domains
+      return this.domain === 'Computer Science' || this.domain === 'Role Based';
+    }
+  },
+  timeLimit: {
+    type: Number,
+    min: 1,
+    max: 300,
+    required: function() {
+      // Time limit is required only for Quiz and Code Test domains
+      return this.domain === 'Quiz' || this.domain === 'Code Test';
+    },
+    default: 30
   },
   startDateTime: {
     type: String,
@@ -138,7 +151,7 @@ const collectionSchema = new mongoose.Schema({
   }
 });
 
-// Interview Results Schema
+// Interview Results Schema - UPDATED
 const interviewResultSchema = new mongoose.Schema({
   interviewId: {
     type: String,
@@ -171,8 +184,10 @@ const interviewResultSchema = new mongoose.Schema({
     required: true
   },
   level: {
-    type: String,
-    required: true
+    type: String
+  },
+  timeLimit: {
+    type: Number
   },
   conversationHistory: [{
     category: String,
@@ -205,6 +220,93 @@ const interviewResultSchema = new mongoose.Schema({
   }
 });
 
+// Quiz/Coding Test Result Schema - NEW
+const testResultSchema = new mongoose.Schema({
+  interviewId: {
+    type: String,
+    required: true,
+    index: true
+  },
+  userId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true
+  },
+  userName: {
+    type: String,
+    required: true
+  },
+  userEmail: {
+    type: String,
+    required: true
+  },
+  company: {
+    type: String,
+    required: true
+  },
+  role: {
+    type: String,
+    required: true
+  },
+  domain: {
+    type: String,
+    enum: ['Quiz', 'Code Test'],
+    required: true
+  },
+  timeLimit: {
+    type: Number,
+    required: true
+  },
+  testData: {
+    type: Object,
+    default: {}
+  },
+  // For Quiz
+  quizAnswers: [{
+    questionId: String,
+    question: String,
+    userAnswer: String,
+    correctAnswer: String,
+    isCorrect: Boolean,
+    category: String,
+    difficulty: String,
+    score: Number,
+    timeTaken: Number // in seconds
+  }],
+  // For Code Test
+  codeSolutions: [{
+    questionId: String,
+    question: String,
+    code: String,
+    language: String,
+    testCasesPassed: Number,
+    totalTestCases: Number,
+    score: Number,
+    timeTaken: Number // in seconds
+  }],
+  overallScore: {
+    type: Number,
+    min: 0,
+    max: 100
+  },
+  totalQuestions: Number,
+  completedQuestions: Number,
+  timeSpent: Number, // in seconds
+  startedAt: {
+    type: Date,
+    default: Date.now
+  },
+  completedAt: {
+    type: Date,
+    default: Date.now
+  },
+  status: {
+    type: String,
+    enum: ['In Progress', 'Completed', 'Timed Out'],
+    default: 'Completed'
+  }
+});
+
 // Update timestamp on save
 collectionSchema.pre('save', function(next) {
   this.updatedAt = Date.now();
@@ -214,6 +316,7 @@ collectionSchema.pre('save', function(next) {
 const User = mongoose.model('User', userSchema);
 const Collection = mongoose.model('Collection', collectionSchema);
 const InterviewResult = mongoose.model('InterviewResult', interviewResultSchema);
+const TestResult = mongoose.model('TestResult', testResultSchema);
 
 // ==================== COLLECTION ROUTES ====================
 
@@ -273,7 +376,7 @@ app.get('/api/collections/:id', async (req, res) => {
 // Create new collection
 app.post('/api/collections', async (req, res) => {
   try {
-    const { interviewId, company, role, description, domain, level, startDateTime, endDateTime, fileName, users } = req.body;
+    const { interviewId, company, role, description, domain, level, timeLimit, startDateTime, endDateTime, fileName, users } = req.body;
 
     // Check if interviewId already exists
     const existingCollection = await Collection.findOne({ interviewId });
@@ -296,6 +399,16 @@ app.post('/api/collections', async (req, res) => {
       return res.status(400).json({ message: 'End date & time must be after start date & time' });
     }
 
+    // Validate time limit for Quiz/Code Test
+    if ((domain === 'Quiz' || domain === 'Code Test') && (!timeLimit || timeLimit <= 0)) {
+      return res.status(400).json({ message: 'Time limit is required for Quiz and Code Test domains' });
+    }
+
+    // Validate level for Computer Science/Role Based
+    if ((domain === 'Computer Science' || domain === 'Role Based') && !level) {
+      return res.status(400).json({ message: 'Level is required for Computer Science and Role Based domains' });
+    }
+
     // Create collection
     const collection = new Collection({
       interviewId,
@@ -303,7 +416,8 @@ app.post('/api/collections', async (req, res) => {
       role,
       description,
       domain,
-      level,
+      level: (domain === 'Computer Science' || domain === 'Role Based') ? level : null,
+      timeLimit: (domain === 'Quiz' || domain === 'Code Test') ? timeLimit : null,
       startDateTime,
       endDateTime,
       fileName: fileName || '',
@@ -335,7 +449,7 @@ app.post('/api/collections', async (req, res) => {
 // Update collection
 app.put('/api/collections/:id', async (req, res) => {
   try {
-    const { company, role, description, domain, level, startDateTime, endDateTime, fileName, status } = req.body;
+    const { company, role, description, domain, level, timeLimit, startDateTime, endDateTime, fileName, status } = req.body;
     
     // Validate date times if both are provided
     if (startDateTime && endDateTime) {
@@ -354,20 +468,39 @@ app.put('/api/collections/:id', async (req, res) => {
       }
     }
 
+    // Validate domain-specific fields
+    const updateData = {
+      company,
+      role,
+      description,
+      domain,
+      startDateTime,
+      endDateTime,
+      fileName,
+      status,
+      updatedAt: Date.now()
+    };
+
+    // Handle level for Computer Science/Role Based
+    if (domain === 'Computer Science' || domain === 'Role Based') {
+      if (!level) {
+        return res.status(400).json({ message: 'Level is required for Computer Science and Role Based domains' });
+      }
+      updateData.level = level;
+      updateData.timeLimit = null;
+    } 
+    // Handle time limit for Quiz/Code Test
+    else if (domain === 'Quiz' || domain === 'Code Test') {
+      if (!timeLimit || timeLimit <= 0) {
+        return res.status(400).json({ message: 'Time limit is required for Quiz and Code Test domains' });
+      }
+      updateData.timeLimit = timeLimit;
+      updateData.level = null;
+    }
+
     const collection = await Collection.findByIdAndUpdate(
       req.params.id,
-      {
-        company,
-        role,
-        description,
-        domain,
-        level,
-        startDateTime,
-        endDateTime,
-        fileName,
-        status,
-        updatedAt: Date.now()
-      },
+      updateData,
       { new: true, runValidators: true }
     );
 
@@ -642,6 +775,7 @@ app.post('/api/interview/results', async (req, res) => {
       role,
       domain,
       level,
+      timeLimit,
       conversationHistory,
       knowledgeScores,
       overallScore,
@@ -665,6 +799,7 @@ app.post('/api/interview/results', async (req, res) => {
       role,
       domain,
       level,
+      timeLimit,
       conversationHistory,
       knowledgeScores,
       overallScore: calculatedScore,
@@ -729,6 +864,179 @@ app.get('/api/collections/:interviewId/results', async (req, res) => {
   }
 });
 
+// ==================== TEST RESULTS ROUTES (Quiz/Code Test) ====================
+
+// Save test results (Quiz or Code Test)
+app.post('/api/test/results', async (req, res) => {
+  try {
+    const {
+      interviewId,
+      userId,
+      userName,
+      userEmail,
+      company,
+      role,
+      domain,
+      timeLimit,
+      testData,
+      quizAnswers,
+      codeSolutions,
+      overallScore,
+      totalQuestions,
+      completedQuestions,
+      timeSpent,
+      status
+    } = req.body;
+
+    // Validate domain
+    if (domain !== 'Quiz' && domain !== 'Code Test') {
+      return res.status(400).json({ message: 'Invalid domain for test results' });
+    }
+
+    const testResult = new TestResult({
+      interviewId,
+      userId,
+      userName,
+      userEmail,
+      company,
+      role,
+      domain,
+      timeLimit,
+      testData,
+      quizAnswers: domain === 'Quiz' ? quizAnswers : [],
+      codeSolutions: domain === 'Code Test' ? codeSolutions : [],
+      overallScore,
+      totalQuestions,
+      completedQuestions,
+      timeSpent,
+      status: status || 'Completed'
+    });
+
+    await testResult.save();
+
+    // Update user's score and completion status in the User collection
+    await User.findByIdAndUpdate(userId, {
+      score: overallScore || 0,
+      completionStatus: 'Completed',
+      completedAt: new Date()
+    });
+
+    // Update completed applicants count in collection
+    const collection = await Collection.findOne({ interviewId });
+    if (collection) {
+      const completedCount = await User.countDocuments({ 
+        interviewId: collection.interviewId, 
+        completionStatus: 'Completed' 
+      });
+      collection.completedApplicants = completedCount;
+      await collection.save();
+    }
+
+    res.status(201).json({
+      message: 'Test results saved successfully',
+      result: testResult
+    });
+  } catch (error) {
+    console.error('Error saving test results:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
+
+// Get test results for a user
+app.get('/api/test/results/:userId', async (req, res) => {
+  try {
+    const results = await TestResult.find({ userId: req.params.userId })
+      .sort({ completedAt: -1 });
+    
+    res.json(results);
+  } catch (error) {
+    console.error('Error fetching test results:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
+
+// Get test results for a collection
+app.get('/api/collections/:interviewId/test-results', async (req, res) => {
+  try {
+    const results = await TestResult.find({ interviewId: req.params.interviewId })
+      .sort({ overallScore: -1 });
+    
+    res.json(results);
+  } catch (error) {
+    console.error('Error fetching collection test results:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
+
+// Start a test (record start time)
+app.post('/api/test/start', async (req, res) => {
+  try {
+    const { interviewId, userId, userName, userEmail, company, role, domain, timeLimit } = req.body;
+
+    // Check if test already in progress
+    const existingTest = await TestResult.findOne({
+      interviewId,
+      userId,
+      status: 'In Progress'
+    });
+
+    if (existingTest) {
+      return res.status(400).json({ message: 'Test already in progress' });
+    }
+
+    const testResult = new TestResult({
+      interviewId,
+      userId,
+      userName,
+      userEmail,
+      company,
+      role,
+      domain,
+      timeLimit,
+      status: 'In Progress',
+      startedAt: new Date()
+    });
+
+    await testResult.save();
+
+    res.status(201).json({
+      message: 'Test started successfully',
+      testId: testResult._id
+    });
+  } catch (error) {
+    console.error('Error starting test:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
+
+// Update test progress
+app.patch('/api/test/progress/:testId', async (req, res) => {
+  try {
+    const { quizAnswers, codeSolutions, completedQuestions, timeSpent } = req.body;
+
+    const updateData = {};
+    if (quizAnswers) updateData.quizAnswers = quizAnswers;
+    if (codeSolutions) updateData.codeSolutions = codeSolutions;
+    if (completedQuestions !== undefined) updateData.completedQuestions = completedQuestions;
+    if (timeSpent !== undefined) updateData.timeSpent = timeSpent;
+
+    const testResult = await TestResult.findByIdAndUpdate(
+      req.params.testId,
+      updateData,
+      { new: true, runValidators: true }
+    );
+
+    if (!testResult) {
+      return res.status(404).json({ message: 'Test not found' });
+    }
+
+    res.json(testResult);
+  } catch (error) {
+    console.error('Error updating test progress:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
+
 // ==================== STATISTICS ROUTES ====================
 
 // Get dashboard statistics
@@ -737,6 +1045,13 @@ app.get('/api/statistics', async (req, res) => {
     const totalCollections = await Collection.countDocuments();
     const activeCollections = await Collection.countDocuments({ status: 'Active' });
     const closedCollections = await Collection.countDocuments({ status: 'Closed' });
+    
+    // Domain-wise statistics
+    const computerScienceCollections = await Collection.countDocuments({ domain: 'Computer Science' });
+    const roleBasedCollections = await Collection.countDocuments({ domain: 'Role Based' });
+    const quizCollections = await Collection.countDocuments({ domain: 'Quiz' });
+    const codeTestCollections = await Collection.countDocuments({ domain: 'Code Test' });
+
     const totalUsers = await User.countDocuments();
     const activeUsers = await User.countDocuments({ status: 'Active' });
     const blockedUsers = await User.countDocuments({ status: 'Blocked' });
@@ -746,7 +1061,13 @@ app.get('/api/statistics', async (req, res) => {
       collections: {
         total: totalCollections,
         active: activeCollections,
-        closed: closedCollections
+        closed: closedCollections,
+        byDomain: {
+          computerScience: computerScienceCollections,
+          roleBased: roleBasedCollections,
+          quiz: quizCollections,
+          codeTest: codeTestCollections
+        }
       },
       users: {
         total: totalUsers,
