@@ -14,6 +14,7 @@ import Result from "./Pages/result";
 import Interview from "./Domains/ComputerBased";
 import Rolebased from "./Domains/RoleBased";
 import CodeEditor from "./Domains/CodeEditor";
+import QuizTest from "./Domains/QuizTest";
 
 function Layout() {
   const location = useLocation();
@@ -39,6 +40,7 @@ function Layout() {
           <Route path="/ComputerBased" element={<Interview />} />
           <Route path="/rolebased" element={<Rolebased />} />
           <Route path="/codeeditor" element={<CodeEditor />} />
+          <Route path="/quiztest" element={<QuizTest />} />
         </Routes>
       </div>
     </>

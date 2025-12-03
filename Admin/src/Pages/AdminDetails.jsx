@@ -332,6 +332,17 @@ function AdminDetails() {
     }
   };
 
+  // --- NEW FUNCTION: Handle Upload Questions Button Click ---
+  const handleUploadQuestions = () => {
+    if (editedCollection.domain === 'Code Test') {
+      navigate('/CodeUpload', { state: { collection: editedCollection } });
+    } else if (editedCollection.domain === 'Quiz') {
+      navigate('/QuizUpload', { state: { collection: editedCollection } });
+    }
+  };
+  // ---------------------------------------------------------
+
+
   const getInterviewStatus = (startDateTime, endDateTime) => {
     const now = new Date();
     const start = parseCustomDateTime(startDateTime);
@@ -637,7 +648,8 @@ function AdminDetails() {
                 <button 
                   onClick={handleEditToggle}
                   disabled={isSaving}
-                  className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2.5 rounded-lg font-medium transition-colors flex items-center justify-center space-x-2 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="bg-blue-600 hover:bg-blue-700 text-white py-2.5 rounded-lg font-medium transition-colors flex items-center justify-center space-x-2 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                  style={{ width: isTimedTest ? '25%' : '50%' }} // Adjust width if Upload Questions button exists
                 >
                   {isSaving ? (
                     <>
@@ -669,13 +681,27 @@ function AdminDetails() {
                     <span>Cancel</span>
                   </button>
                 ) : (
-                  <button 
-                    onClick={() => setShowDeleteConfirm(true)}
-                    className="px-4 py-2.5 border border-red-300 text-red-700 rounded-lg font-medium hover:bg-red-50 transition-colors flex items-center space-x-2"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                    <span>Delete</span>
-                  </button>
+                  <>
+                    {/* --- NEW BUTTON: Upload Questions (only for Quiz/Code Test) --- */}
+                    {isTimedTest && (
+                      <button
+                        onClick={handleUploadQuestions}
+                        className="flex-1 bg-purple-600 hover:bg-purple-700 text-white py-2.5 rounded-lg font-medium transition-colors flex items-center justify-center space-x-2 shadow-sm"
+                      >
+                        <Upload className="w-4 h-4" />
+                        <span>Upload Questions</span>
+                      </button>
+                    )}
+                    {/* ------------------------------------------------------------------- */}
+                    <button 
+                      onClick={() => setShowDeleteConfirm(true)}
+                      className="flex-1 px-4 py-2.5 border border-red-300 text-red-700 rounded-lg font-medium hover:bg-red-50 transition-colors flex items-center space-x-2"
+                      style={{ width: isTimedTest ? '25%' : '50%' }} // Adjust width for symmetry
+                    >
+                      <Trash2 className="w-4 h-4" />
+                      <span>Delete</span>
+                    </button>
+                  </>
                 )}
               </div>
             </div>
