@@ -1,21 +1,24 @@
 import React, { useState, useEffect } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import {
   Plus, Trash2, Code, Upload, FileCode, Hash, Brain,
   Loader2, ChevronRight, Star, Zap, Copy, Check,
-  AlertCircle, ChevronDown, ChevronUp
+  AlertCircle, ChevronDown, ChevronUp, Building2, Briefcase,
+  Calendar, Timer, ArrowLeft, Save, Info, FileText, Users
 } from 'lucide-react';
 
 const API_KEY = 'AIzaSyCle45rsftrDsl2IXNyewl64aGd3g0cJxc';
 const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent';
 
 // Question Container Component
-function QuestionContainer({ 
-  index, 
-  question, 
-  onUpdate, 
-  onDelete, 
+function QuestionContainer({
+  index,
+  question,
+  onUpdate,
+  onDelete,
   onGenerateQuestion,
-  isGenerating 
+  isGenerating,
+  collection
 }) {
   const [isExpanded, setIsExpanded] = useState(true);
   const [copiedField, setCopiedField] = useState(null);
@@ -259,6 +262,10 @@ function QuestionContainer({
 
 // Main AdminCodeUpload Component
 function AdminCodeUpload() {
+  const location = useLocation();
+  const navigate = useNavigate();
+  const collection = location.state?.collection;
+
   const [questions, setQuestions] = useState([
     {
       id: 1,
@@ -277,6 +284,12 @@ function AdminCodeUpload() {
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
+
+  useEffect(() => {
+    if (!collection) {
+      navigate('/');
+    }
+  }, [collection, navigate]);
 
   const addQuestion = () => {
     const newId = questions.length + 1;
@@ -426,6 +439,10 @@ function AdminCodeUpload() {
     }
   };
 
+  if (!collection) {
+    return null; // Will redirect in useEffect
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50/30">
       {/* Header */}
@@ -433,6 +450,12 @@ function AdminCodeUpload() {
         <div className="max-w-7xl mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
+              <button
+                onClick={() => navigate(-1)}
+                className="p-2 hover:bg-blue-50 rounded-lg transition-colors text-slate-600 hover:text-blue-600"
+              >
+                <ArrowLeft className="w-5 h-5" />
+              </button>
               <div className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-4 py-2 rounded-lg font-semibold text-xl shadow-sm">
                 CODE UPLOAD
               </div>
@@ -444,28 +467,29 @@ function AdminCodeUpload() {
                 <span className="text-sm font-medium text-slate-900">Code Questions</span>
               </div>
             </div>
-            <div className="flex items-center space-x-4">
+            
+            <div className="flex items-center space-x-3">
               <button
                 onClick={addQuestion}
-                className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white px-6 py-2.5 rounded-lg font-medium flex items-center space-x-2 transition-all duration-200 shadow-lg shadow-green-500/30 hover:shadow-xl hover:shadow-green-500/40"
+                className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white px-4 py-2.5 rounded-lg font-medium flex items-center space-x-2 transition-all duration-200 shadow-sm"
               >
-                <Plus className="w-5 h-5" />
+                <Plus className="w-4 h-4" />
                 <span>Add Question</span>
               </button>
               <button
                 onClick={handleSubmitAll}
                 disabled={isSubmitting}
-                className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 disabled:from-slate-400 disabled:to-slate-500 disabled:cursor-not-allowed text-white px-6 py-2.5 rounded-lg font-medium flex items-center space-x-2 transition-all duration-200 shadow-lg shadow-blue-500/30 hover:shadow-xl hover:shadow-blue-500/40"
+                className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 disabled:from-slate-400 disabled:to-slate-500 disabled:cursor-not-allowed text-white px-4 py-2.5 rounded-lg font-medium flex items-center space-x-2 transition-all duration-200 shadow-sm"
               >
                 {isSubmitting ? (
                   <>
-                    <Loader2 className="w-5 h-5 animate-spin" />
+                    <Loader2 className="w-4 h-4 animate-spin" />
                     <span>Saving...</span>
                   </>
                 ) : (
                   <>
-                    <Upload className="w-5 h-5" />
-                    <span>Save All Questions</span>
+                    <Save className="w-4 h-4" />
+                    <span>Save Questions</span>
                   </>
                 )}
               </button>
@@ -474,9 +498,67 @@ function AdminCodeUpload() {
         </div>
       </header>
 
-      <div className="max-w-7xl mx-auto px-6 py-8">
+      {/* Collection Details Section */}
+      <div className="max-w-7xl mx-auto px-6 py-4">
+        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-slate-200 p-6 mb-6 shadow-sm">
+
+
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="bg-white p-4 rounded-lg border border-slate-200">
+              <div className="flex items-center space-x-3">
+                <div className="p-2 bg-blue-100 rounded-lg">
+                  <Building2 className="w-4 h-4 text-blue-600" />
+                </div>
+                <div>
+                  <p className="text-xs text-slate-500">Company</p>
+                  <p className="font-medium text-slate-900">{collection.company}</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white p-4 rounded-lg border border-slate-200">
+              <div className="flex items-center space-x-3">
+                <div className="p-2 bg-purple-100 rounded-lg">
+                  <Briefcase className="w-4 h-4 text-purple-600" />
+                </div>
+                <div>
+                  <p className="text-xs text-slate-500">Role</p>
+                  <p className="font-medium text-slate-900">{collection.role}</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white p-4 rounded-lg border border-slate-200">
+              <div className="flex items-center space-x-3">
+                <div className="p-2 bg-green-100 rounded-lg">
+                  <Hash className="w-4 h-4 text-green-600" />
+                </div>
+                <div>
+                  <p className="text-xs text-slate-500">Interview ID</p>
+                  <p className="font-medium text-slate-900">{collection.interviewId}</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white p-4 rounded-lg border border-slate-200">
+              <div className="flex items-center space-x-3">
+                <div className="p-2 bg-orange-100 rounded-lg">
+                  <Timer className="w-4 h-4 text-orange-600" />
+                </div>
+                <div>
+                  <p className="text-xs text-slate-500">Time Limit</p>
+                  <p className="font-medium text-slate-900">{collection.timeLimit} minutes</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="max-w-7xl mx-auto px-4 py-8">
+
         {/* Stats Bar */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-3 mb-8">
           <div className="bg-gradient-to-r from-blue-50 to-blue-100 border-2 border-blue-200 rounded-lg p-6">
             <div className="flex items-center justify-between">
               <div>
@@ -514,7 +596,7 @@ function AdminCodeUpload() {
               </div>
             </div>
           </div>
-          <div className="bg-gradient-to-r from-red-50 to-red-100 border-2 border-red-200 rounded-lg p-6">
+          <div className="bg-gradient-to-br from-red-50 to-red-100 border-2 border-red-200 rounded-lg p-6">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-slate-600 text-sm mb-1">Advanced</p>
@@ -550,6 +632,7 @@ function AdminCodeUpload() {
               onDelete={deleteQuestion}
               onGenerateQuestion={generateWithAI}
               isGenerating={isGenerating}
+              collection={collection}
             />
           ))}
         </div>

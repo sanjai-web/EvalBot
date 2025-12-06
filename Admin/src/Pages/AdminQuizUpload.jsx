@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { 
   Plus, X, Minimize2, Maximize2, Trash2, Save, 
   Loader2, ChevronRight, Edit, 
@@ -7,14 +7,18 @@ import {
   CheckCircle, Copy, RefreshCw, Upload,
   ChevronLeft, MoreVertical, Menu, Filter,
   Download, Grid, List, Eye, EyeOff,
-  Trash, AlertTriangle, Box
+  Trash, AlertTriangle, Box, Building2, Briefcase,
+  ArrowLeft, Calendar, Timer, Info, Users
 } from 'lucide-react';
 
 const API_KEY = 'AIzaSyC0aI1VU6rmnqIfGa-shuUzqtQ-yyzATZo';
 const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent';
 
 function AdminQuizUpload() {
+  const location = useLocation();
   const navigate = useNavigate();
+  const collection = location.state?.collection;
+
   const [containers, setContainers] = useState([
     {
       id: 1,
@@ -38,6 +42,12 @@ function AdminQuizUpload() {
   const [isSaving, setIsSaving] = useState(false);
   const [showDeleteAllConfirm, setShowDeleteAllConfirm] = useState(false);
   const [containerCount, setContainerCount] = useState(1);
+
+  useEffect(() => {
+    if (!collection) {
+      navigate('/');
+    }
+  }, [collection, navigate]);
 
   const levelConfig = {
     'Beginner': { color: 'green', icon: '★', bgColor: 'bg-green-100', textColor: 'text-green-700', borderColor: 'border-green-200' },
@@ -363,35 +373,131 @@ function AdminQuizUpload() {
     setIsSaving(false);
   };
 
+  if (!collection) {
+    return null; // Will redirect in useEffect
+  }
+
   return (
     <div className="min-h-screen bg-slate-50">
       {/* Top Navigation Bar */}
       <header className="bg-white border-b border-slate-200 shadow-sm">
         <div className="max-w-7xl mx-auto px-6 py-4">
-          <div className="flex items-center space-x-4">
-            <button
-              onClick={() => navigate('/')}
-              className="p-2 hover:bg-blue-50 rounded-lg transition-colors text-slate-600 hover:text-blue-600"
-            >
-              <ChevronRight className="w-5 h-5 rotate-180" />
-            </button>
-            <div className="bg-gradient-to-r from-purple-600 to-indigo-600 text-white px-3 py-1 rounded-md font-bold text-lg">
-              QUIZ
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              <button
+                onClick={() => navigate(-1)}
+                className="p-2 hover:bg-blue-50 rounded-lg transition-colors text-slate-600 hover:text-blue-600"
+              >
+                <ArrowLeft className="w-5 h-5" />
+              </button>
+              <div className="bg-gradient-to-r from-purple-600 to-indigo-600 text-white px-3 py-1 rounded-md font-bold text-lg">
+                QUIZ
+              </div>
+              <div className="flex items-center space-x-2 text-slate-600">
+                <span className="text-sm">Admin Panel</span>
+                <ChevronRight className="w-4 h-4" />
+                <span className="text-sm font-medium text-slate-900">Quiz Generator</span>
+              </div>
             </div>
-            <div className="flex items-center space-x-2 text-slate-600">
-              <span className="text-sm">Admin Panel</span>
-              <ChevronRight className="w-4 h-4" />
-              <span className="text-sm font-medium text-slate-900">Quiz Generator</span>
+            
+            <div className="flex items-center space-x-3">
+              <button
+                onClick={() => setShowDeleteAllConfirm(true)}
+                disabled={containers.length === 1 && !containers[0].topic && containers[0].questions.length === 0}
+                className="px-4 py-2.5 border border-red-300 text-red-700 rounded-lg font-medium hover:bg-red-50 transition-colors flex items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <Trash className="w-4 h-4" />
+                <span>Delete All</span>
+              </button>
+              <button
+                onClick={saveAllQuestions}
+                disabled={isSaving || containers.every(c => c.questions.length === 0)}
+                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-lg font-medium transition-colors flex items-center space-x-2 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isSaving ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span>Saving...</span>
+                  </>
+                ) : (
+                  <>
+                    <Save className="w-4 h-4" />
+                    <span>Save All Questions</span>
+                  </>
+                )}
+              </button>
+              <button
+                onClick={addContainer}
+                className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white px-4 py-2.5 rounded-lg font-medium transition-colors flex items-center space-x-2 shadow-sm shadow-green-500/30"
+              >
+                <Plus className="w-4 h-4" />
+                <span>New Container</span>
+              </button>
             </div>
           </div>
         </div>
       </header>
 
-      <div className="relative">
-        {/* Background Pattern */}
-        <div className="absolute inset-0 -z-10 bg-slate-50">
-          <div className="absolute inset-0 bg-[linear-gradient(to_right,#f0f0f0_1px,transparent_1px),linear-gradient(to_bottom,#f0f0f0_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)] opacity-10"></div>
+      {/* Collection Details Section */}
+      <div className="max-w-7xl mx-auto px-6 py-4">
+        <div className="bg-gradient-to-r from-purple-50 to-indigo-50 rounded-xl border border-slate-200 p-6 mb-6 shadow-sm">
+
+
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="bg-white p-4 rounded-lg border border-slate-200">
+              <div className="flex items-center space-x-3">
+                <div className="p-2 bg-blue-100 rounded-lg">
+                  <Building2 className="w-4 h-4 text-blue-600" />
+                </div>
+                <div>
+                  <p className="text-xs text-slate-500">Company</p>
+                  <p className="font-medium text-slate-900">{collection.company}</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white p-4 rounded-lg border border-slate-200">
+              <div className="flex items-center space-x-3">
+                <div className="p-2 bg-purple-100 rounded-lg">
+                  <Briefcase className="w-4 h-4 text-purple-600" />
+                </div>
+                <div>
+                  <p className="text-xs text-slate-500">Role</p>
+                  <p className="font-medium text-slate-900">{collection.role}</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white p-4 rounded-lg border border-slate-200">
+              <div className="flex items-center space-x-3">
+                <div className="p-2 bg-green-100 rounded-lg">
+                  <Hash className="w-4 h-4 text-green-600" />
+                </div>
+                <div>
+                  <p className="text-xs text-slate-500">Interview ID</p>
+                  <p className="font-medium text-slate-900">{collection.interviewId}</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white p-4 rounded-lg border border-slate-200">
+              <div className="flex items-center space-x-3">
+                <div className="p-2 bg-orange-100 rounded-lg">
+                  <Timer className="w-4 h-4 text-orange-600" />
+                </div>
+                <div>
+                  <p className="text-xs text-slate-500">Time Limit</p>
+                  <p className="font-medium text-slate-900">{collection.timeLimit} minutes</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          
         </div>
+      </div>
+
+      <div className="relative">
 
         <div className="max-w-7xl mx-auto px-6 py-8 relative z-10">
           {/* Header */}
@@ -402,40 +508,6 @@ function AdminQuizUpload() {
                   Quiz Generator
                 </h1>
                 <p className="text-slate-600 mt-2">Generate quiz questions using AI or add manually</p>
-              </div>
-              <div className="flex items-center space-x-3">
-                <button
-                  onClick={() => setShowDeleteAllConfirm(true)}
-                  disabled={containers.length === 1 && !containers[0].topic && containers[0].questions.length === 0}
-                  className="px-4 py-2.5 border border-red-300 text-red-700 rounded-lg font-medium hover:bg-red-50 transition-colors flex items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  <Trash className="w-4 h-4" />
-                  <span>Delete All</span>
-                </button>
-                <button
-                  onClick={saveAllQuestions}
-                  disabled={isSaving || containers.every(c => c.questions.length === 0)}
-                  className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-lg font-medium transition-colors flex items-center space-x-2 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {isSaving ? (
-                    <>
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                      <span>Saving...</span>
-                    </>
-                  ) : (
-                    <>
-                      <Save className="w-4 h-4" />
-                      <span>Save All Questions</span>
-                    </>
-                  )}
-                </button>
-                <button
-                  onClick={addContainer}
-                  className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white px-6 py-2.5 rounded-lg font-medium transition-colors flex items-center space-x-2 shadow-sm shadow-green-500/30"
-                >
-                  <Plus className="w-4 h-4" />
-                  <span>New Container</span>
-                </button>
               </div>
             </div>
           </header>
