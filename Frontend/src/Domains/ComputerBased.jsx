@@ -400,37 +400,39 @@ const CodeEditor = ({
 // Fullscreen Exit Modal Component
 const FullscreenExitModal = ({ onStayFullscreen, onEndInterview }) => {
   return (
-    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center">
-      <div className="bg-gradient-to-br from-slate-800 to-slate-900 border-2 border-purple-500/50 rounded-2xl p-8 max-w-md mx-4 shadow-2xl">
+    <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
+      <div className="bg-[#0a0f1c] border border-white/10 rounded-2xl p-8 max-w-md w-full relative overflow-hidden shadow-[0_0_50px_rgba(0,0,0,0.8)]">
+        <div className="absolute top-0 left-0 w-full h-1 bg-amber-500 shadow-[0_0_15px_rgba(245,158,11,0.8)]"></div>
         <div className="text-center mb-6">
-          <div className="w-16 h-16 bg-yellow-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
-            <svg className="w-8 h-8 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div className="w-20 h-20 bg-amber-500/20 rounded-full flex items-center justify-center mx-auto mb-6 relative border border-amber-500/30">
+            <div className="absolute inset-0 rounded-full animate-ping bg-amber-400/20"></div>
+            <svg className="w-10 h-10 text-amber-400 z-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
             </svg>
           </div>
-          <h2 className="text-2xl font-bold text-white mb-2">Fullscreen Exited</h2>
-          <p className="text-gray-300">
+          <h2 className="text-2xl font-bold text-white mb-3 tracking-wide">Fullscreen Exited</h2>
+          <p className="text-slate-400 text-sm">
             The interview requires fullscreen mode for the best experience and to ensure proper proctoring.
           </p>
         </div>
         
-        <div className="space-y-3">
+        <div className="space-y-4">
           <button
             onClick={onStayFullscreen}
-            className="w-full px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-semibold rounded-lg transition-all shadow-lg"
+            className="w-full px-6 py-4 bg-indigo-600 hover:bg-indigo-500 text-white font-bold uppercase tracking-wider text-sm rounded-xl transition-all shadow-[0_0_20px_rgba(79,70,229,0.4)]"
           >
             Return to Fullscreen
           </button>
           
           <button
             onClick={onEndInterview}
-            className="w-full px-6 py-3 bg-red-600/20 hover:bg-red-600/30 border border-red-500/50 text-red-300 font-semibold rounded-lg transition-all"
+            className="w-full px-6 py-4 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 text-rose-400 font-bold uppercase tracking-wider text-sm rounded-xl transition-all"
           >
             End Interview
           </button>
         </div>
         
-        <p className="text-xs text-gray-400 text-center mt-4">
+        <p className="text-xs text-slate-500 text-center mt-6 font-medium">
           Note: Exiting fullscreen multiple times may affect your interview evaluation.
         </p>
       </div>
@@ -493,8 +495,8 @@ const Interview = () => {
   const finalTranscriptAccumulator = useRef('');
 
   const API_URL = 'http://localhost:5000/api';
-  const GEMINI_API_KEY = 'AIzaSyAROwOdL1mFBZTqOb81hl6prgv3Jqpvgzk';
-  const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent';
+  const GROQ_API_KEY = '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';
+  const GROQ_API_URL = 'https://api.groq.com/openai/v1/chat/completions';
 
   // User info state
   const [userInfo, setUserInfo] = useState({
@@ -787,24 +789,25 @@ IMPORTANT:
 - Make questions specific to the candidate's resume and job description
 - DO NOT include company/role motivation questions`;
 
-      const response = await fetch(`${GEMINI_API_URL}?key=${GEMINI_API_KEY}`, {
+      const response = await fetch(GROQ_API_URL, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${typeof GROQ_API_KEY !== 'undefined' ? GROQ_API_KEY : API_KEY}`
         },
         body: JSON.stringify({
-          contents: [{
-            parts: [{
-              text: prompt
-            }]
+          model: "llama-3.1-8b-instant",
+          messages: [{
+            role: "user",
+            content: prompt
           }]
         })
       });
 
       const data = await response.json();
       
-      if (data.candidates && data.candidates[0].content.parts[0].text) {
-        const generatedText = data.candidates[0].content.parts[0].text;
+      if (data.choices && data.choices[0].message.content) {
+        const generatedText = data.choices[0].message.content;
         
         try {
           const jsonMatch = generatedText.match(/\[[\s\S]*\]/);
@@ -961,24 +964,25 @@ ${awaitingFollowUp ? "" : "QUESTION: [follow-up question if FOLLOW_UP is yes]"}
 Keep it constructive, professional, and encouraging.`;
       }
 
-      const response = await fetch(`${GEMINI_API_URL}?key=${GEMINI_API_KEY}`, {
+      const response = await fetch(GROQ_API_URL, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${typeof GROQ_API_KEY !== 'undefined' ? GROQ_API_KEY : API_KEY}`
         },
         body: JSON.stringify({
-          contents: [{
-            parts: [{
-              text: prompt
-            }]
+          model: "llama-3.1-8b-instant",
+          messages: [{
+            role: "user",
+            content: prompt
           }]
         })
       });
 
       const data = await response.json();
       
-      if (data.candidates && data.candidates[0].content.parts[0].text) {
-        const evaluationText = data.candidates[0].content.parts[0].text;
+      if (data.choices && data.choices[0].message.content) {
+        const evaluationText = data.choices[0].message.content;
         setEvaluation(evaluationText);
 
         if (isCandidateQuestion) {
@@ -1067,24 +1071,25 @@ Rules:
 
 Output:`;
 
-      const response = await fetch(`${GEMINI_API_URL}?key=${GEMINI_API_KEY}`, {
+      const response = await fetch(GROQ_API_URL, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${typeof GROQ_API_KEY !== 'undefined' ? GROQ_API_KEY : API_KEY}`
         },
         body: JSON.stringify({
-          contents: [{
-            parts: [{
-              text: prompt
-            }]
+          model: "llama-3.1-8b-instant",
+          messages: [{
+            role: "user",
+            content: prompt
           }]
         })
       });
 
       const data = await response.json();
       
-      if (data.candidates && data.candidates[0].content.parts[0].text) {
-        return data.candidates[0].content.parts[0].text.trim();
+      if (data.choices && data.choices[0].message.content) {
+        return data.choices[0].message.content.trim();
       } else {
         return "Error: Unable to execute code";
       }
@@ -1610,6 +1615,7 @@ Output:`;
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${typeof GROQ_API_KEY !== 'undefined' ? GROQ_API_KEY : API_KEY}`
         },
         body: JSON.stringify({
           interviewId: interviewData.collection.interviewId,
@@ -1708,8 +1714,14 @@ Output:`;
   return (
     <div 
       ref={containerRef}
-      className="h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 text-white overflow-hidden flex flex-col"
+      className="h-screen bg-[#030712] text-slate-300 overflow-hidden flex flex-col relative"
     >
+      {/* Background Ambience */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden">
+        <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] rounded-full bg-indigo-900/20 blur-[120px]"></div>
+        <div className="absolute bottom-[-20%] right-[-10%] w-[50%] h-[50%] rounded-full bg-purple-900/20 blur-[120px]"></div>
+      </div>
+
       {showExitConfirm && (
         <FullscreenExitModal 
           onStayFullscreen={handleStayFullscreen}
@@ -1717,80 +1729,94 @@ Output:`;
         />
       )}
 
-      <div className="bg-black/40 backdrop-blur-md border-b border-white/10 px-6 py-3 flex items-center justify-between">
-        <div className="flex items-center space-x-4">
-          <div className="text-xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
-            Eval-Bot
+      {/* Header Bar */}
+      <div className="bg-[#0a0f1c]/80 backdrop-blur-xl border-b border-white/10 px-6 py-4 flex items-center justify-between z-10 shadow-[0_0_20px_rgba(0,0,0,0.5)]">
+        <div className="flex items-center space-x-6">
+          <div className="text-xl font-bold text-white tracking-wide flex items-center space-x-2">
+            <div className="w-8 h-8 rounded-lg bg-indigo-500 flex items-center justify-center shadow-[0_0_15px_rgba(99,102,241,0.5)]">
+              <span className="text-white text-lg">E</span>
+            </div>
+            <span>Eval-Bot</span>
           </div>
-          <div className="text-sm text-gray-400">
+          <div className="h-6 w-px bg-white/10"></div>
+          <div className="text-sm text-slate-400 font-medium">
             {interviewData ? `${interviewData.jobName} at ${interviewData.companyName}` : 'Interview Session'}
           </div>
-          <div className="text-sm text-gray-400">
+          <div className="h-6 w-px bg-white/10"></div>
+          <div className="text-sm font-bold text-indigo-400 bg-indigo-500/10 px-3 py-1 rounded-full border border-indigo-500/20">
             Question {questionNumber}/{questions.length}
           </div>
           {currentCategory && (
-            <div className="text-xs bg-purple-500/20 px-3 py-1 rounded-full border border-purple-500/30">
+            <div className="text-xs font-bold uppercase tracking-wider bg-purple-500/20 text-purple-400 px-3 py-1 rounded-full border border-purple-500/30">
               {currentCategory}
             </div>
           )}
           {awaitingFollowUp && (
-            <div className="text-xs bg-orange-500/20 px-3 py-1 rounded-full border border-orange-500/30">
-              Follow-up Question
+            <div className="text-xs font-bold uppercase tracking-wider bg-amber-500/20 text-amber-400 px-3 py-1 rounded-full border border-amber-500/30">
+              Follow-up
             </div>
           )}
           {isCodingQuestion && (
-            <div className="text-xs bg-green-500/20 px-3 py-1 rounded-full border border-green-500/30">
-              Coding Question
+            <div className="text-xs font-bold uppercase tracking-wider bg-emerald-500/20 text-emerald-400 px-3 py-1 rounded-full border border-emerald-500/30">
+              Coding
             </div>
           )}
         </div>
         
-        <div className="flex items-center space-x-6">
+        <div className="flex items-center space-x-4">
           {/* User Info Display */}
-          <div className="flex items-center space-x-3 bg-blue-500/20 px-4 py-2 rounded-lg border border-blue-500/30">
-            <div className="flex items-center space-x-2">
-              <FaUserCircle className="w-5 h-5 text-blue-400" />
+          <div className="flex items-center space-x-3 bg-white/5 px-4 py-2 rounded-xl border border-white/10">
+            <div className="flex items-center space-x-3">
+              <div className="w-8 h-8 rounded-full bg-indigo-500/20 flex items-center justify-center border border-indigo-500/30">
+                <FaUserCircle className="w-5 h-5 text-indigo-400" />
+              </div>
               <div className="text-right">
-                <div className="text-sm font-medium text-white">{userInfo.name}</div>
-                <div className="text-xs text-blue-300">{userInfo.role}</div>
+                <div className="text-sm font-bold text-white leading-tight">{userInfo.name}</div>
+                <div className="text-xs text-indigo-300 font-medium">{userInfo.role}</div>
               </div>
             </div>
           </div>
 
-          <div className="flex items-center space-x-2 bg-blue-500/20 px-4 py-2 rounded-lg border border-blue-500/30">
-            <svg className="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div className="flex items-center space-x-3 bg-white/5 px-4 py-2.5 rounded-xl border border-white/10">
+            <svg className="w-5 h-5 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
-            <span className="font-mono text-lg font-bold">{formatTime(timer)}</span>
+            <span className="font-mono text-lg font-bold text-white tracking-wider">{formatTime(timer)}</span>
           </div>
           
-          <div className="flex items-center space-x-2 bg-red-500/20 px-4 py-2 rounded-lg border border-red-500/30">
-            <div className={`w-3 h-3 rounded-full ${isRecording ? 'bg-red-500 animate-pulse' : 'bg-gray-500'}`}></div>
-            <span className="text-sm font-medium">{isRecording ? 'Recording' : 'Paused'}</span>
+          <div className={`flex items-center space-x-2 px-4 py-2.5 rounded-xl border transition-colors ${isRecording ? 'bg-rose-500/10 border-rose-500/30' : 'bg-white/5 border-white/10'}`}>
+            <div className={`w-2.5 h-2.5 rounded-full ${isRecording ? 'bg-rose-500 shadow-[0_0_10px_rgba(244,63,94,0.8)] animate-pulse' : 'bg-slate-500'}`}></div>
+            <span className={`text-sm font-bold uppercase tracking-wider ${isRecording ? 'text-rose-400' : 'text-slate-400'}`}>{isRecording ? 'Recording' : 'Paused'}</span>
           </div>
           
-          <div className="flex items-center space-x-2 bg-green-500/20 px-4 py-2 rounded-lg border border-green-500/30">
-            <svg className="w-5 h-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div className={`flex items-center space-x-2 px-4 py-2.5 rounded-xl border transition-colors ${isFullscreen ? 'bg-emerald-500/10 border-emerald-500/30' : 'bg-white/5 border-white/10'}`}>
+            <svg className={`w-4 h-4 ${isFullscreen ? 'text-emerald-400' : 'text-slate-400'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
             </svg>
-            <span className="text-sm">{isFullscreen ? 'Fullscreen Active' : 'Not Fullscreen'}</span>
+            <span className={`text-xs font-bold uppercase tracking-wider ${isFullscreen ? 'text-emerald-400' : 'text-slate-400'}`}>{isFullscreen ? 'Fullscreen' : 'Windowed'}</span>
           </div>
         </div>
       </div>
 
-      <div className="flex-1 flex overflow-hidden">
-        <div className="w-1/3 flex flex-col p-4 space-y-4">
-          <div className="flex-1 bg-black/30 backdrop-blur-sm rounded-2xl border border-purple-500/30 p-4 flex flex-col">
-            <div className="flex items-center justify-between mb-2">
-              <h2 className="text-lg font-semibold">AI Interviewer</h2>
-              <div className="flex space-x-1">
-                <div className="w-3 h-3 rounded-full bg-green-500"></div>
-                <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
-                <div className="w-3 h-3 rounded-full bg-red-500"></div>
+      <div className="flex-1 flex overflow-hidden z-10 p-4 gap-4">
+        {/* Left Sidebar (AI & Camera) */}
+        <div className="w-1/3 flex flex-col gap-4">
+          {/* AI Interviewer View */}
+          <div className="flex-1 bg-[#0a0f1c]/80 backdrop-blur-xl rounded-2xl border border-white/10 p-4 flex flex-col shadow-lg relative overflow-hidden group">
+            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-indigo-500 to-purple-500 opacity-50 group-hover:opacity-100 transition-opacity"></div>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-sm font-bold uppercase tracking-wider text-slate-300 flex items-center space-x-2">
+                <svg className="w-4 h-4 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
+                <span>AI Interviewer</span>
+              </h2>
+              <div className="flex space-x-1.5">
+                <div className="w-2.5 h-2.5 rounded-full bg-emerald-500/50 border border-emerald-500"></div>
+                <div className="w-2.5 h-2.5 rounded-full bg-amber-500/50 border border-amber-500"></div>
+                <div className="w-2.5 h-2.5 rounded-full bg-rose-500/50 border border-rose-500"></div>
               </div>
             </div>
             
-            <div className="flex-1 relative">
+            <div className="flex-1 relative rounded-xl overflow-hidden bg-black/40 border border-white/5">
               <Canvas
                 camera={{ position: [0, 0, 4], fov: 50 }}
                 className="w-full h-full"
@@ -1800,25 +1826,30 @@ Output:`;
                 <Scene isSpeaking={aiSpeaking} />
               </Canvas>
               
-              <div className="absolute top-2 right-2 flex items-center space-x-1 bg-indigo-900/70 backdrop-blur-sm px-3 py-1 rounded-full">
-                <div className={`w-2 h-2 rounded-full ${aiSpeaking ? 'bg-green-400 animate-pulse' : 'bg-yellow-400'}`}></div>
-                <div className={`w-2 h-2 rounded-full ${aiSpeaking ? 'bg-yellow-400 animate-pulse' : 'bg-orange-400'}`}></div>
-                <div className={`w-2 h-2 rounded-full ${aiSpeaking ? 'bg-red-400 animate-pulse' : 'bg-red-400'}`}></div>
-                <span className="text-xs ml-1">{aiSpeaking ? 'Speaking' : 'Listening'}</span>
+              <div className="absolute top-3 right-3 flex items-center space-x-1.5 bg-[#0a0f1c]/90 backdrop-blur-md px-3 py-1.5 rounded-lg border border-white/10 shadow-lg">
+                <div className={`w-1.5 h-1.5 rounded-full ${aiSpeaking ? 'bg-emerald-400 animate-pulse shadow-[0_0_5px_rgba(52,211,153,0.8)]' : 'bg-slate-600'}`}></div>
+                <div className={`w-1.5 h-1.5 rounded-full ${aiSpeaking ? 'bg-emerald-400 animate-pulse delay-75 shadow-[0_0_5px_rgba(52,211,153,0.8)]' : 'bg-slate-600'}`}></div>
+                <div className={`w-1.5 h-1.5 rounded-full ${aiSpeaking ? 'bg-emerald-400 animate-pulse delay-150 shadow-[0_0_5px_rgba(52,211,153,0.8)]' : 'bg-slate-600'}`}></div>
+                <span className={`text-xs font-bold uppercase tracking-wider ml-1 ${aiSpeaking ? 'text-emerald-400' : 'text-slate-400'}`}>{aiSpeaking ? 'Speaking' : 'Listening'}</span>
               </div>
             </div>
           </div>
 
-          <div className="h-96 bg-black/30 backdrop-blur-sm rounded-2xl border border-blue-500/30 p-4 flex flex-col">
-            <div className="flex items-center justify-between mb-2">
-              <h2 className="text-lg font-semibold">Your Camera</h2>
-              <div className="flex items-center space-x-2 bg-red-500/20 px-3 py-1 rounded-full">
-                <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
-                <span className="text-xs">Live</span>
+          {/* Camera View */}
+          <div className="h-80 bg-[#0a0f1c]/80 backdrop-blur-xl rounded-2xl border border-white/10 p-4 flex flex-col shadow-lg relative overflow-hidden group">
+            <div className="absolute top-0 left-0 w-full h-1 bg-emerald-500 opacity-50 group-hover:opacity-100 transition-opacity"></div>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-sm font-bold uppercase tracking-wider text-slate-300 flex items-center space-x-2">
+                <svg className="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
+                <span>Your Camera</span>
+              </h2>
+              <div className="flex items-center space-x-2 bg-rose-500/10 border border-rose-500/20 px-3 py-1 rounded-lg">
+                <div className="w-2 h-2 bg-rose-500 rounded-full animate-pulse shadow-[0_0_5px_rgba(244,63,94,0.8)]"></div>
+                <span className="text-xs font-bold uppercase tracking-wider text-rose-400">Live</span>
               </div>
             </div>
             
-            <div className="flex-1 bg-black rounded-xl overflow-hidden relative">
+            <div className="flex-1 bg-black rounded-xl overflow-hidden relative border border-white/5">
               <video 
                 ref={videoRef} 
                 autoPlay 
@@ -1826,119 +1857,102 @@ Output:`;
                 className="w-full h-full object-cover"
               />
               
-              <div className="absolute bottom-2 left-2 bg-black/50 text-white px-2 py-1 rounded text-xs">
+              <div className="absolute bottom-3 left-3 bg-[#0a0f1c]/80 backdrop-blur-md text-white px-2 py-1 rounded text-xs font-mono border border-white/10">
                 {new Date().toLocaleTimeString()}
               </div>
               
-              <div className="absolute bottom-2 right-2 flex items-center space-x-1 bg-black/50 px-2 py-1 rounded">
-                <svg className="w-3 h-3 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="absolute bottom-3 right-3 flex items-center space-x-1.5 bg-[#0a0f1c]/80 backdrop-blur-md px-2 py-1 rounded border border-white/10">
+                <svg className="w-3 h-3 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                 </svg>
-                <span className="text-xs">Good Quality</span>
+                <span className="text-xs font-medium text-emerald-300">HQ</span>
               </div>
             </div>
           </div>
         </div>
 
-        <div className="flex-1 flex flex-col p-4 space-y-4">
-          {/* Evaluation Display */}
-          {evaluation && (
-            <div >
-              {/* <div className="flex items-start space-x-4">
-                <div className="flex-shrink-0">
-                  <div className="w-12 h-12 bg-blue-500/30 rounded-full flex items-center justify-center">
-                    <svg className="w-6 h-6 text-blue-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                  </div>
-                </div>
-                <div className="flex-1">
-                  <h3 className="font-semibold text-blue-300 mb-2">AI Evaluation:</h3>
-                  <p className="text-lg leading-relaxed whitespace-pre-wrap">{evaluation}</p>
-                </div>
-              </div> */}
-            </div>
-          )}
-
+        {/* Right Panel (Question & Answer) */}
+        <div className="flex-1 flex flex-col gap-4">
           {interviewCompleted ? (
-            <div className="flex-1 bg-gradient-to-br from-green-500/10 to-blue-500/10 backdrop-blur-sm rounded-2xl border border-green-500/30 p-8 flex flex-col items-center justify-center text-center">
-              <div className="w-24 h-24 bg-green-500/20 rounded-full flex items-center justify-center mb-6">
-                <svg className="w-12 h-12 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="flex-1 bg-[#0a0f1c]/80 backdrop-blur-xl rounded-2xl border border-white/10 p-8 flex flex-col items-center justify-center text-center shadow-lg relative overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-b from-emerald-500/5 to-transparent pointer-events-none"></div>
+              
+              <div className="w-24 h-24 bg-emerald-500/20 rounded-full flex items-center justify-center mb-8 border border-emerald-500/30 relative">
+                <div className="absolute inset-0 rounded-full bg-emerald-400/20 animate-ping"></div>
+                <svg className="w-12 h-12 text-emerald-400 z-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
               </div>
               
-              <h2 className="text-3xl font-bold text-green-400 mb-4">Interview Completed!</h2>
-              <p className="text-xl text-gray-300 mb-2">You've answered all the questions.</p>
-              <p className="text-lg text-gray-400 mb-8">Thank you for completing the interview.</p>
+              <h2 className="text-3xl font-bold text-white mb-4 tracking-wide">Interview Completed!</h2>
+              <p className="text-xl text-slate-300 mb-2">You've answered all the questions.</p>
+              <p className="text-lg text-slate-400 mb-10">Thank you for completing the interview.</p>
               
-              <div className="grid grid-cols-2 gap-4 mb-8 w-full max-w-md">
-                <div className="bg-blue-500/20 p-4 rounded-lg border border-blue-500/30">
-                  <div className="text-2xl font-bold text-blue-400">{conversationHistory.filter(item => !item.isCandidateQuestion).length}</div>
-                  <div className="text-sm text-blue-300">Questions Answered</div>
+              <div className="grid grid-cols-2 gap-6 mb-10 w-full max-w-lg">
+                <div className="bg-white/5 p-6 rounded-2xl border border-white/10 flex flex-col items-center">
+                  <div className="text-4xl font-bold text-indigo-400 mb-2">{conversationHistory.filter(item => !item.isCandidateQuestion).length}</div>
+                  <div className="text-xs font-bold uppercase tracking-wider text-slate-400">Questions Answered</div>
                 </div>
-                <div className="bg-purple-500/20 p-4 rounded-lg border border-purple-500/30">
-                  <div className="text-2xl font-bold text-purple-400">{formatTime(timer)}</div>
-                  <div className="text-sm text-purple-300">Interview Duration</div>
+                <div className="bg-white/5 p-6 rounded-2xl border border-white/10 flex flex-col items-center">
+                  <div className="text-4xl font-mono font-bold text-purple-400 mb-2">{formatTime(timer)}</div>
+                  <div className="text-xs font-bold uppercase tracking-wider text-slate-400">Duration</div>
                 </div>
               </div>
               
               <button 
                 onClick={handleEndInterview}
-                className="px-8 py-4 bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white font-bold text-lg rounded-xl transition-all shadow-lg hover:shadow-green-500/25"
+                className="px-8 py-4 bg-indigo-600 hover:bg-indigo-500 text-white font-bold uppercase tracking-wider text-sm rounded-xl transition-all shadow-[0_0_20px_rgba(79,70,229,0.4)] flex items-center space-x-3"
               >
-                🏁 View Detailed Results
+                <span>View Detailed Results</span>
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
               </button>
             </div>
           ) : (
             <>
-              <div className="bg-gradient-to-r from-purple-500/20 to-pink-500/20 backdrop-blur-sm rounded-2xl border border-purple-500/30 p-6">
-                <div className="flex items-start space-x-4">
+              {/* AI Question Card */}
+              <div className="bg-[#0a0f1c]/80 backdrop-blur-xl rounded-2xl border border-white/10 p-6 shadow-lg relative overflow-hidden group">
+                <div className="absolute top-0 left-0 w-1 h-full bg-indigo-500 shadow-[0_0_10px_rgba(99,102,241,0.8)]"></div>
+                <div className="flex items-start space-x-5">
                   <div className="flex-shrink-0">
-                    <div className="w-12 h-12 bg-purple-500/30 rounded-full flex items-center justify-center">
-                      <svg className="w-6 h-6 text-purple-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <div className="w-12 h-12 bg-indigo-500/20 border border-indigo-500/30 rounded-xl flex items-center justify-center">
+                      <svg className="w-6 h-6 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                       </svg>
                     </div>
                   </div>
                   
-                  <div className="flex-1">
-                    <div className="flex items-center space-x-2 mb-2">
-                      <h3 className="font-semibold text-purple-300">AI Interviewer asks:</h3>
+                  <div className="flex-1 pt-1">
+                    <div className="flex items-center space-x-3 mb-3">
+                      <h3 className="text-sm font-bold uppercase tracking-wider text-slate-400">AI Interviewer asks</h3>
                       {currentCategory && (
-                        <span className="text-xs bg-purple-600/30 px-2 py-1 rounded-full">
+                        <span className="text-xs font-bold uppercase tracking-wider bg-indigo-500/10 text-indigo-400 px-2 py-0.5 rounded border border-indigo-500/20">
                           {currentCategory}
                         </span>
                       )}
                       {awaitingFollowUp && (
-                        <span className="text-xs bg-orange-600/30 px-2 py-1 rounded-full">
+                        <span className="text-xs font-bold uppercase tracking-wider bg-amber-500/10 text-amber-400 px-2 py-0.5 rounded border border-amber-500/20">
                           Follow-up
                         </span>
                       )}
                       {aiSpeaking && (
-                        <div className="flex items-center space-x-1">
-                          <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-                          <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse delay-75"></div>
-                          <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse delay-150"></div>
-                          <span className="text-xs text-green-400 ml-1">Speaking</span>
-                        </div>
-                      )}
-                      {isGeneratingQuestions && (
-                        <div className="flex items-center space-x-1">
-                          <div className="w-2 h-2 bg-blue-400 rounded-full animate-pulse"></div>
-                          <span className="text-xs text-blue-400 ml-1">Generating Questions...</span>
+                        <div className="flex items-center space-x-1.5 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">
+                          <div className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse"></div>
+                          <div className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse delay-75"></div>
+                          <div className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse delay-150"></div>
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-400 ml-1">Speaking</span>
                         </div>
                       )}
                     </div>
                     {isGeneratingQuestions ? (
-                      <div className="flex items-center space-x-2">
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-purple-400"></div>
-                        <p className="text-lg leading-relaxed text-gray-400">
-                          Generating personalized structured interview questions based on your resume...
-                        </p>
+                      <div className="flex items-center space-x-3 text-slate-400 bg-white/5 p-4 rounded-xl border border-white/5">
+                        <svg className="w-5 h-5 animate-spin text-indigo-400" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        <p className="text-sm font-medium">Generating personalized structured interview questions based on your profile...</p>
                       </div>
                     ) : (
-                      <p className="text-lg leading-relaxed">{currentQuestion}</p>
+                      <p className="text-lg md:text-xl text-white leading-relaxed font-medium">{currentQuestion}</p>
                     )}
                   </div>
                 </div>
@@ -1946,134 +1960,136 @@ Output:`;
 
               {/* Conditional Rendering: Code Editor for Coding Questions, Regular Answer for Others */}
               {isCodingQuestion ? (
-                <CodeEditor
-                  code={code}
-                  onCodeChange={setCode}
-                  selectedLanguage={selectedLanguage}
-                  onLanguageChange={setSelectedLanguage}
-                  onRunCode={handleRunCode}
-                  output={output}
-                  isRunning={isRunning}
-                  onSubmitCode={handleSubmitCode}
-                  onSkipQuestion={handleSkipQuestion}
-                />
+                <div className="flex-1 rounded-2xl overflow-hidden border border-white/10 shadow-lg">
+                  <CodeEditor
+                    code={code}
+                    onCodeChange={setCode}
+                    selectedLanguage={selectedLanguage}
+                    onLanguageChange={setSelectedLanguage}
+                    onRunCode={handleRunCode}
+                    output={output}
+                    isRunning={isRunning}
+                    onSubmitCode={handleSubmitCode}
+                    onSkipQuestion={handleSkipQuestion}
+                  />
+                </div>
               ) : (
-                <div className="flex-1 bg-black/30 backdrop-blur-sm rounded-2xl border border-gray-500/30 p-4 flex flex-col">
-                  <div className="flex items-center justify-between mb-3">
-                    <div className="flex items-center space-x-2">
-                      <h3 className="font-semibold text-gray-300">Your Answer</h3>
+                <div className="flex-1 bg-[#0a0f1c]/80 backdrop-blur-xl rounded-2xl border border-white/10 p-5 flex flex-col shadow-lg">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center space-x-3">
+                      <h3 className="text-sm font-bold uppercase tracking-wider text-slate-300">Your Answer</h3>
                       {currentCategory === "Closing" && (
-                        <span className="text-xs bg-green-500/20 px-3 py-1 rounded-full border border-green-500/30 text-green-300">
-                          Closing Section - Ask your questions!
+                        <span className="text-xs font-bold uppercase tracking-wider bg-emerald-500/10 text-emerald-400 px-2 py-0.5 rounded border border-emerald-500/20">
+                          Ask your questions!
                         </span>
                       )}
                       {candidateSpeaking && (
-                        <div className="flex items-center space-x-1">
-                          <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-                          <span className="text-xs text-green-400">Listening</span>
+                        <div className="flex items-center space-x-1.5 bg-rose-500/10 px-2 py-0.5 rounded border border-rose-500/20">
+                          <div className="w-1.5 h-1.5 bg-rose-400 rounded-full animate-pulse shadow-[0_0_5px_rgba(244,63,94,0.8)]"></div>
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-rose-400">Mic Active</span>
                         </div>
                       )}
                       {!isSpeechSupported && (
-                        <span className="text-xs text-red-400 ml-2">(Not supported)</span>
+                        <span className="text-xs font-bold text-rose-400 ml-2">(Not supported)</span>
                       )}
                       {!micPermissionGranted && isSpeechSupported && (
-                        <span className="text-xs text-yellow-400 ml-2">(Mic permission required)</span>
+                        <span className="text-xs font-bold text-amber-400 ml-2">(Mic permission required)</span>
                       )}
                     </div>
-                    <div className="text-xs text-gray-400">
-                      {answer.length} characters
+                    <div className="text-xs font-mono bg-white/5 px-2 py-1 rounded border border-white/5 text-slate-400">
+                      {answer.length} chars
                     </div>
                   </div>
 
                   {/* Speech Error Display */}
                   {speechError && (
-                    <div className="mb-3 p-3 bg-red-500/20 border border-red-500/30 rounded-lg">
-                      <p className="text-sm text-red-300 font-medium">
-                        ⚠️ {speechError}
-                      </p>
+                    <div className="mb-4 p-3 bg-rose-500/10 border border-rose-500/20 rounded-xl flex items-center space-x-3">
+                      <svg className="w-5 h-5 text-rose-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                      <p className="text-sm text-rose-300 font-medium">{speechError}</p>
                     </div>
                   )}
 
                   {/* Speech Recognition Status */}
                   {candidateSpeaking && speechToText && (
-                    <div className="mb-3 p-3 bg-green-500/20 border border-green-500/30 rounded-lg">
+                    <div className="mb-4 p-4 bg-emerald-500/5 border border-emerald-500/20 rounded-xl">
                       <div className="flex items-center space-x-2 mb-2">
                         <div className="flex space-x-1">
-                          <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-                          <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse delay-75"></div>
-                          <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse delay-150"></div>
+                          <div className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse"></div>
+                          <div className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse delay-75"></div>
+                          <div className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse delay-150"></div>
                         </div>
-                        <span className="text-sm text-green-300 font-medium">Listening...</span>
+                        <span className="text-xs font-bold uppercase tracking-wider text-emerald-400">Transcribing</span>
                       </div>
-                      <p className="text-sm text-gray-300 whitespace-pre-wrap">
-                        {speechToText}
+                      <p className="text-sm text-slate-300 whitespace-pre-wrap italic leading-relaxed">
+                        "{speechToText}"
                       </p>
                       {speechToText.includes('[') && (
-                        <p className="text-xs text-green-400 mt-1">
-                          Words in brackets are being processed in real-time...
+                        <p className="text-xs text-emerald-500/70 mt-2 font-medium">
+                          Processing real-time speech...
                         </p>
                       )}
                     </div>
                   )}
 
                   {/* Textarea with Microphone Button */}
-                  <div className="flex-1 relative">
+                  <div className="flex-1 relative group">
                     <textarea
                       value={answer}
                       onChange={(e) => setAnswer(e.target.value)}
-                      placeholder="Type your answer here. You can also use voice input by clicking the microphone button."
-                      className="w-full h-full bg-black/50 text-white p-4 rounded-xl border border-white/10 focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 resize-none font-mono text-sm pr-16"
+                      placeholder="Type your answer here or click the microphone to speak..."
+                      className="w-full h-full bg-black/40 text-slate-200 p-5 rounded-xl border border-white/10 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/50 resize-none text-base pr-16 custom-scrollbar transition-all outline-none"
                     />
                     
                     {/* Round Microphone Button */}
                     <button
                       onClick={toggleVoiceRecognition}
                       disabled={!isSpeechSupported}
-                      className={`absolute bottom-4 right-4 w-12 h-12 rounded-full flex items-center justify-center transition-all ${
+                      className={`absolute bottom-5 right-5 w-12 h-12 rounded-full flex items-center justify-center transition-all duration-300 ${
                         candidateSpeaking 
-                          ? 'bg-red-500/80 border border-red-500 text-white shadow-lg' 
+                          ? 'bg-rose-500 text-white shadow-[0_0_20px_rgba(244,63,94,0.6)] scale-110' 
                           : isSpeechSupported
-                          ? 'bg-green-500/80 border border-green-500 text-white hover:bg-green-600 shadow-lg hover:scale-105'
-                          : 'bg-gray-500/80 border border-gray-500 text-gray-300 cursor-not-allowed'
+                          ? 'bg-indigo-600/80 hover:bg-indigo-500 border border-indigo-400/50 text-white shadow-lg hover:shadow-[0_0_15px_rgba(99,102,241,0.5)]'
+                          : 'bg-white/5 border border-white/10 text-slate-500 cursor-not-allowed'
                       }`}
                     >
                       {candidateSpeaking ? 
-                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg className="w-5 h-5 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 10a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z" />
                         </svg>
                         :
-                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
                         </svg>
                       }
                     </button>
                   </div>
                   
-                  <div className="flex justify-between items-center mt-4">
-                    <div className="text-xs text-gray-400">
-                      Press <kbd className="px-2 py-1 bg-black/50 rounded text-xs">Ctrl+Enter</kbd> to submit
+                  <div className="flex justify-between items-center mt-5">
+                    <div className="text-xs text-slate-500 font-medium">
+                      Press <kbd className="px-2 py-1 bg-white/5 border border-white/10 rounded-md font-mono text-slate-400 mx-1">Ctrl+Enter</kbd> to submit
                     </div>
                     
                     <div className="flex space-x-3">
                       {/* Skip Question Button */}
                       <button 
                         onClick={handleSkipQuestion}
-                        className="px-6 py-2 rounded-lg font-medium transition-all bg-gradient-to-r from-gray-600 to-gray-700 hover:from-gray-700 hover:to-gray-800 shadow-lg border border-gray-500/30"
+                        className="px-5 py-2.5 rounded-xl font-bold uppercase tracking-wider text-xs transition-all bg-white/5 hover:bg-white/10 text-slate-400 hover:text-slate-200 border border-white/10"
                       >
-                        Skip Question →
+                        Skip
                       </button>
                       
                       <button 
                         onClick={handleSubmitAnswer}
                         disabled={!answer.trim()}
-                        className={`px-6 py-2 rounded-lg font-medium transition-all ${
+                        className={`px-6 py-2.5 rounded-xl font-bold uppercase tracking-wider text-xs transition-all flex items-center space-x-2 ${
                           answer.trim()
-                            ? 'bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 shadow-lg' 
-                            : 'bg-gray-700 cursor-not-allowed opacity-50'
+                            ? 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-[0_0_15px_rgba(79,70,229,0.4)]' 
+                            : 'bg-white/5 text-slate-500 cursor-not-allowed border border-white/5'
                         }`}
                       >
-                        {currentCategory === "Closing" ? 'Submit & Continue →' : questionNumber < questions.length ? 'Submit Answer →' : 'Submit Answer →'}
+                        <span>{currentCategory === "Closing" ? 'Submit & End' : 'Submit Answer'}</span>
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
                       </button>
                     </div>
                   </div>

@@ -310,81 +310,58 @@ function Details() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 py-8 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
-      {/* Enhanced Background Pattern */}
-      <div className="absolute inset-0 opacity-100">
-        {/* Main geometric pattern */}
-        {/* <div 
-          className="absolute inset-0 opacity-[0.03]"
-          style={{
-            backgroundImage: `
-              linear-gradient(30deg, #4F46E5 12%, transparent 12.5%, transparent 87%, #4F46E5 87.5%, #4F46E5),
-              linear-gradient(150deg, #4F46E5 12%, transparent 12.5%, transparent 87%, #4F46E5 87.5%, #4F46E5),
-              linear-gradient(30deg, #4F46E5 12%, transparent 12.5%, transparent 87%, #4F46E5 87.5%, #4F46E5),
-              linear-gradient(150deg, #4F46E5 12%, transparent 12.5%, transparent 87%, #4F46E5 87.5%, #4F46E5),
-              linear-gradient(60deg, #4F46E577 25%, transparent 25.5%, transparent 75%, #4F46E577 75%, #4F46E577),
-              linear-gradient(60deg, #4F46E577 25%, transparent 25.5%, transparent 75%, #4F46E577 75%, #4F46E577)
-            `,
-            backgroundSize: '80px 140px',
-            backgroundPosition: '0 0, 0 0, 40px 70px, 40px 70px, 0 0, 40px 70px'
-          }}
-        ></div> */}
-        
-        {/* Subtle dot pattern overlay */}
+    <div className="min-h-screen bg-[#030712] py-8 px-4 sm:px-6 lg:px-8 relative overflow-hidden flex items-center justify-center selection:bg-indigo-500/30">
+      {/* Dynamic Background Ambience */}
+      <div className="fixed inset-0 z-0 pointer-events-none">
+        <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] rounded-full bg-indigo-900/20 blur-[120px] mix-blend-screen" />
+        <div className="absolute bottom-[-20%] right-[-10%] w-[50%] h-[50%] rounded-full bg-purple-900/20 blur-[120px] mix-blend-screen" />
         <div 
-          className="absolute inset-0 opacity-[0.02]"
-          style={{
-            backgroundImage: `radial-gradient(circle at 25% 25%, #4F46E5 2px, transparent 2px)`,
-            backgroundSize: '50px 50px'
-          }}
-        ></div>
-        
-        {/* Gradient overlays for depth */}
-        <div className="absolute inset-0 bg-gradient-to-br from-transparent via-white to-transparent opacity-20"></div>
-        <div className="absolute top-0 left-0 w-full h-32 bg-gradient-to-b from-blue-100 to-transparent opacity-10"></div>
-        <div className="absolute bottom-0 left-0 w-full h-32 bg-gradient-to-t from-indigo-100 to-transparent opacity-10"></div>
+          className="absolute inset-0 opacity-[0.15]"
+          style={{ backgroundImage: 'radial-gradient(#4f46e5 1px, transparent 1px)', backgroundSize: '40px 40px' }}
+        />
       </div>
       
-      <div className="max-w-md mx-auto relative z-10">
+      <div className="w-full max-w-md relative z-10">
         {/* Login Form */}
-        <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-6 backdrop-blur-sm bg-white/95">
+        <div className="bg-[#0a0f1c]/80 backdrop-blur-2xl rounded-3xl shadow-[0_0_50px_rgba(0,0,0,0.5)] border border-white/10 p-8">
           {/* Form Header */}
-          <div className="text-center mb-6">
-            <h1 className="text-lg font-semibold text-gray-900">
-              Candidate Login
+          <div className="text-center mb-8">
+            <h1 className="text-2xl font-bold text-white tracking-wide">
+              Authentication Portal
             </h1>
+            <p className="text-slate-400 text-sm mt-2">Provide credentials to initialize your session.</p>
           </div>
 
           {error && (
-            <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg">
+            <div className="mb-6 p-4 bg-rose-500/10 border border-rose-500/20 text-rose-400 rounded-xl">
               <p className="text-sm font-medium">{error}</p>
             </div>
           )}
 
           {/* Interview Already Completed Message */}
           {userAlreadyCompleted && completionInfo && (
-            <div className="mb-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+            <div className="mb-6 p-4 bg-amber-500/10 border border-amber-500/20 rounded-xl">
               <div className="flex items-start space-x-3">
                 <div className="flex-shrink-0">
-                  <FaBan className="w-5 h-5 text-yellow-600 mt-0.5" />
+                  <FaBan className="w-5 h-5 text-amber-500 mt-0.5" />
                 </div>
                 <div className="flex-1">
-                  <h3 className="text-sm font-semibold text-yellow-800 mb-2">
-                    Interview Already Completed
+                  <h3 className="text-sm font-bold text-amber-400 mb-2">
+                    Session Already Completed
                   </h3>
-                  <p className="text-sm text-yellow-700 mb-3">
-                    You have already completed this interview. Each candidate can only attempt the interview once.
+                  <p className="text-sm text-amber-200/70 mb-3">
+                    Our records indicate you have already completed this evaluation. Candidates are permitted a single attempt.
                   </p>
-                  <div className="bg-white p-3 rounded border border-yellow-100">
+                  <div className="bg-white/5 p-3 rounded-lg border border-white/5">
                     <div className="grid grid-cols-2 gap-2 text-sm">
                       <div>
-                        <span className="font-medium text-yellow-700">Interview ID:</span>
-                        <div className="text-yellow-600 font-mono">{completionInfo.interviewId}</div>
+                        <span className="font-medium text-amber-500/70">Interview ID:</span>
+                        <div className="text-amber-400 font-mono">{completionInfo.interviewId}</div>
                       </div>
                       {completionInfo.completedAt && (
                         <div className="col-span-2">
-                          <span className="font-medium text-yellow-700">Completed On:</span>
-                          <div className="text-yellow-600">
+                          <span className="font-medium text-amber-500/70">Completed On:</span>
+                          <div className="text-amber-400">
                             {new Date(completionInfo.completedAt).toLocaleDateString()} at {' '}
                             {new Date(completionInfo.completedAt).toLocaleTimeString()}
                           </div>
@@ -392,19 +369,19 @@ function Details() {
                       )}
                     </div>
                   </div>
-                  <p className="text-xs text-yellow-600 mt-2">
-                    If you believe this is an error, please contact the administrator.
+                  <p className="text-xs text-amber-500/50 mt-3">
+                    If this is an error, please contact your system administrator.
                   </p>
                 </div>
               </div>
             </div>
           )}
 
-          <form className="space-y-4" onSubmit={handleSubmit}>
+          <form className="space-y-5" onSubmit={handleSubmit}>
             {/* Interview ID Input */}
             <div>
-              <label htmlFor="interviewId" className="block text-sm font-medium text-gray-700 mb-1">
-                <FaBriefcase className="inline w-3 h-3 mr-1 text-blue-600" />
+              <label htmlFor="interviewId" className="block text-sm font-medium text-slate-300 mb-2">
+                <FaBriefcase className="inline w-3 h-3 mr-2 text-indigo-400" />
                 Interview ID
               </label>
               <input
@@ -414,8 +391,8 @@ function Details() {
                 required
                 value={formData.interviewId}
                 onChange={handleChange}
-                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 bg-white uppercase"
-                placeholder="Enter Interview ID"
+                className="w-full px-4 py-3 text-sm bg-[#030712]/50 border border-white/10 rounded-xl text-white focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500/50 transition-all duration-200 placeholder-slate-600 uppercase"
+                placeholder="ENTER INTERVIEW ID"
                 style={{ textTransform: 'uppercase' }}
                 disabled={userAlreadyCompleted}
               />
@@ -423,8 +400,8 @@ function Details() {
 
             {/* Email Input */}
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
-                <FaEnvelope className="inline w-3 h-3 mr-1 text-blue-600" />
+              <label htmlFor="email" className="block text-sm font-medium text-slate-300 mb-2">
+                <FaEnvelope className="inline w-3 h-3 mr-2 text-indigo-400" />
                 Email Address
               </label>
               <input
@@ -434,17 +411,17 @@ function Details() {
                 required
                 value={formData.email}
                 onChange={handleChange}
-                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 bg-white"
-                placeholder="your.email@example.com"
+                className="w-full px-4 py-3 text-sm bg-[#030712]/50 border border-white/10 rounded-xl text-white focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500/50 transition-all duration-200 placeholder-slate-600"
+                placeholder="candidate@company.com"
                 disabled={userAlreadyCompleted}
               />
             </div>
 
             {/* Password Input */}
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
-                <FaLock className="inline w-3 h-3 mr-1 text-blue-600" />
-                Password
+              <label htmlFor="password" className="block text-sm font-medium text-slate-300 mb-2">
+                <FaLock className="inline w-3 h-3 mr-2 text-indigo-400" />
+                Access Key
               </label>
               <input
                 id="password"
@@ -454,25 +431,25 @@ function Details() {
                 minLength={6}
                 value={formData.password}
                 onChange={handleChange}
-                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 bg-white"
-                placeholder="Enter your password"
+                className="w-full px-4 py-3 text-sm bg-[#030712]/50 border border-white/10 rounded-xl text-white focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500/50 transition-all duration-200 placeholder-slate-600"
+                placeholder="Enter access key"
                 disabled={userAlreadyCompleted}
               />
             </div>
 
             {/* Resume Upload */}
             <div>
-              <label htmlFor="resume" className="block text-sm font-medium text-gray-700 mb-1">
-                <FaUpload className="inline w-3 h-3 mr-1 text-blue-600" />
-                Upload Resume (PDF)
+              <label htmlFor="resume" className="block text-sm font-medium text-slate-300 mb-2">
+                <FaUpload className="inline w-3 h-3 mr-2 text-indigo-400" />
+                Provide Context (Resume PDF)
               </label>
               <div
-                className={`border-2 border-dashed rounded-lg p-4 text-center transition-all duration-300 bg-white ${
+                className={`border-2 border-dashed rounded-xl p-5 text-center transition-all duration-300 ${
                   isDragOver 
-                    ? 'border-blue-500 bg-blue-50' 
+                    ? 'border-indigo-500 bg-indigo-500/10' 
                     : formData.resume 
-                    ? 'border-green-500 bg-green-50' 
-                    : 'border-gray-300 hover:border-blue-400 hover:bg-gray-50'
+                    ? 'border-emerald-500/50 bg-emerald-500/5' 
+                    : 'border-white/10 bg-white/[0.02] hover:border-indigo-500/30 hover:bg-white/[0.04]'
                 } ${userAlreadyCompleted ? 'opacity-50 cursor-not-allowed' : ''}`}
                 onDragOver={userAlreadyCompleted ? undefined : handleDragOver}
                 onDragLeave={userAlreadyCompleted ? undefined : handleDragLeave}
@@ -490,36 +467,34 @@ function Details() {
                 
                 {formData.resume ? (
                   <div className="text-center">
-                    <FaCheckCircle className="mx-auto w-8 h-8 text-green-500 mb-2" />
-                    <p className="text-green-600 font-medium text-sm mb-1">Resume Uploaded</p>
-                    <p className="text-gray-600 text-xs mb-1">{formData.resume.name}</p>
-                    <p className="text-gray-500 text-xs mb-3">
+                    <FaCheckCircle className="mx-auto w-8 h-8 text-emerald-400 mb-3" />
+                    <p className="text-emerald-400 font-medium text-sm mb-1">Context Successfully Loaded</p>
+                    <p className="text-slate-300 text-xs mb-1">{formData.resume.name}</p>
+                    <p className="text-slate-500 text-xs mb-4">
                       {(formData.resume.size / 1024).toFixed(2)} KB
                     </p>
                     {!userAlreadyCompleted && (
                       <label
                         htmlFor="resume"
-                        className="inline-flex items-center px-3 py-1 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 cursor-pointer transition-colors duration-200"
+                        className="inline-flex items-center px-4 py-1.5 bg-white/5 border border-white/10 text-slate-300 text-xs font-semibold uppercase tracking-wider rounded-lg hover:bg-white/10 hover:text-white cursor-pointer transition-all duration-200"
                       >
-                        <FaCloudUploadAlt className="w-3 h-3 mr-1" />
-                        Change File
+                        <FaCloudUploadAlt className="w-3 h-3 mr-2" /> Replace File
                       </label>
                     )}
                   </div>
                 ) : (
                   <div className="text-center">
-                    <FaCloudUploadAlt className="mx-auto w-8 h-8 text-gray-400 mb-2" />
-                    <p className="text-gray-600 text-sm mb-1">
-                      <span className="font-medium">Click to upload</span> or drag and drop
+                    <FaCloudUploadAlt className="mx-auto w-8 h-8 text-indigo-400/50 mb-3" />
+                    <p className="text-slate-300 text-sm mb-1">
+                      <span className="text-indigo-400 font-medium">Click to browse</span> or drag and drop
                     </p>
-                    <p className="text-gray-500 text-xs mb-3">PDF only (Max 5MB)</p>
+                    <p className="text-slate-500 text-xs mb-4">PDF format only (Max 5MB)</p>
                     {!userAlreadyCompleted && (
                       <label
                         htmlFor="resume"
-                        className="inline-flex items-center px-3 py-1 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 cursor-pointer transition-colors duration-200"
+                        className="inline-flex items-center px-4 py-1.5 bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 text-xs font-semibold uppercase tracking-wider rounded-lg hover:bg-indigo-500 hover:text-white cursor-pointer transition-all duration-200"
                       >
-                        <FaUpload className="w-3 h-3 mr-1" />
-                        Choose File
+                        <FaUpload className="w-3 h-3 mr-2" /> Select File
                       </label>
                     )}
                   </div>
@@ -528,57 +503,57 @@ function Details() {
             </div>
 
             {/* Terms and Conditions Checkbox */}
-            <div className={`bg-gray-50 border border-gray-200 rounded-lg p-3 ${userAlreadyCompleted ? 'opacity-50' : ''}`}>
+            <div className={`bg-white/5 border border-white/5 rounded-xl p-4 ${userAlreadyCompleted ? 'opacity-50' : ''}`}>
               <div className="flex items-start">
-                <div className="flex items-center h-4">
+                <div className="flex items-center h-5">
                   <input
                     id="terms"
                     name="terms"
                     type="checkbox"
                     checked={termsAccepted}
                     onChange={userAlreadyCompleted ? undefined : handleCheckboxClick}
-                    className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 cursor-pointer"
+                    className="w-4 h-4 text-indigo-600 bg-[#030712] border-white/20 rounded focus:ring-indigo-500 cursor-pointer focus:ring-offset-0 focus:ring-offset-transparent"
                     disabled={userAlreadyCompleted}
                   />
                 </div>
-                <div className="ml-2">
-                  <label htmlFor="terms" className={`text-sm text-gray-900 ${userAlreadyCompleted ? 'cursor-not-allowed' : 'cursor-pointer'}`}>
-                    I accept the terms and conditions
+                <div className="ml-3">
+                  <label htmlFor="terms" className={`text-sm text-slate-300 ${userAlreadyCompleted ? 'cursor-not-allowed' : 'cursor-pointer hover:text-white transition-colors'}`}>
+                    I accept the terms and conditions and agree to the proctoring guidelines.
                   </label>
                 </div>
               </div>
             </div>
 
             {/* Submit Button */}
-            <div className="pt-2">
+            <div className="pt-4">
               <button
                 type="submit"
                 disabled={isLoading || !formData.resume || !termsAccepted || userAlreadyCompleted}
-                className={`w-full flex justify-center items-center py-2 px-4 text-sm font-semibold rounded-lg text-white transition-all duration-300 ${
+                className={`w-full flex justify-center items-center py-4 px-4 text-sm font-bold uppercase tracking-wider rounded-xl text-white transition-all duration-300 ${
                   userAlreadyCompleted
-                    ? 'bg-gray-400 cursor-not-allowed'
+                    ? 'bg-white/5 text-slate-500 border border-white/5 cursor-not-allowed'
                     : isLoading || !formData.resume || !termsAccepted
-                    ? 'bg-blue-400 cursor-not-allowed opacity-50' 
-                    : 'bg-blue-600 hover:bg-blue-700 hover:shadow-md transform hover:-translate-y-0.5 shadow-sm'
+                    ? 'bg-indigo-500/50 cursor-not-allowed opacity-50' 
+                    : 'bg-indigo-600 hover:bg-indigo-500 shadow-[0_0_20px_rgba(79,70,229,0.4)] hover:shadow-[0_0_30px_rgba(79,70,229,0.6)] transform hover:-translate-y-0.5'
                 }`}
               >
                 {userAlreadyCompleted ? (
                   <>
-                    <FaBan className="w-3 h-3 mr-2" />
-                    Interview Completed
+                    <FaBan className="w-4 h-4 mr-2" />
+                    Session Completed
                   </>
                 ) : isLoading ? (
                   <>
-                    <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+                    <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" fill="none" viewBox="0 0 24 24">
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                     </svg>
-                    Processing...
+                    Initializing Environment...
                   </>
                 ) : (
                   <>
-                    <FaPaperPlane className="w-3 h-3 mr-2" />
-                    Begin Interview
+                    <FaPaperPlane className="w-4 h-4 mr-2" />
+                    Initialize Session
                   </>
                 )}
               </button>
@@ -589,93 +564,66 @@ function Details() {
 
       {/* Terms and Conditions Popup */}
       {showTermsPopup && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
-          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-hidden">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#030712]/80 backdrop-blur-sm p-4">
+          <div className="bg-[#0a0f1c] border border-white/10 rounded-2xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-hidden">
             {/* Popup Header */}
-            <div className="bg-gray-900 p-4 relative">
+            <div className="border-b border-white/5 p-5 relative">
               <button
                 onClick={handleClosePopup}
-                className="absolute top-3 right-3 text-gray-400 hover:text-white rounded-full p-1 transition-colors duration-200"
+                className="absolute top-4 right-4 text-slate-500 hover:text-white transition-colors"
               >
-                <FaTimes className="w-4 h-4" />
+                <FaTimes className="w-5 h-5" />
               </button>
-              <div className="flex items-center space-x-2">
-                <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-                  <FaInfoCircle className="w-4 h-4 text-white" />
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 bg-indigo-500/10 rounded-xl flex items-center justify-center">
+                  <FaInfoCircle className="w-5 h-5 text-indigo-400" />
                 </div>
                 <div>
-                  <h2 className="text-lg font-bold text-white">Interview Guidelines</h2>
-                  <p className="text-gray-300 text-xs">Please review before proceeding</p>
+                  <h2 className="text-lg font-bold text-white">System Requirements</h2>
+                  <p className="text-slate-400 text-xs mt-0.5">Please acknowledge before proceeding</p>
                 </div>
               </div>
             </div>
 
             {/* Popup Content */}
-            <div className="p-4 overflow-y-auto max-h-[calc(90vh-120px)]">
-              <div className="space-y-3">
-                <div className="bg-yellow-50 border-l-4 border-yellow-400 p-3 rounded-r-lg">
-                  <div className="flex items-start">
-                    <FaExclamationTriangle className="w-4 h-4 text-yellow-600 mt-0.5 mr-2 flex-shrink-0" />
-                    <p className="text-xs text-yellow-800 font-medium">
-                      Compliance with these guidelines is mandatory
-                    </p>
-                  </div>
+            <div className="p-5 overflow-y-auto max-h-[calc(90vh-140px)] space-y-4">
+              <div className="bg-amber-500/10 border-l-2 border-amber-500 p-4 rounded-r-xl">
+                <div className="flex items-start">
+                  <FaExclamationTriangle className="w-4 h-4 text-amber-500 mt-0.5 mr-3 flex-shrink-0" />
+                  <p className="text-sm text-amber-200/80 leading-relaxed">
+                    Strict adherence to these protocols is required. Violations will flag your session for review.
+                  </p>
                 </div>
+              </div>
 
-                <div className="space-y-2">
-                  {[
-                    {
-                      icon: FaExpand,
-                      color: 'blue',
-                      title: 'Fullscreen Mode Required',
-                      description: 'Interview must be conducted in fullscreen mode.'
-                    },
-                    {
-                      icon: FaVideo,
-                      color: 'green',
-                      title: 'Webcam Must Remain Active',
-                      description: 'Webcam must be enabled throughout the interview.'
-                    },
-                    {
-                      icon: FaClock,
-                      color: 'purple',
-                      title: 'Time Commitment',
-                      description: 'Interview takes 20-40 minutes without interruptions.'
-                    },
-                    {
-                      icon: FaWifi,
-                      color: 'indigo',
-                      title: 'Stable Connection',
-                      description: 'Reliable internet connection is essential.'
-                    },
-                    {
-                      icon: FaBan,
-                      color: 'red',
-                      title: 'Single Attempt Only',
-                      description: 'Each candidate can attempt the interview only once.'
-                    }
-                  ].map((item, index) => (
-                    <div key={index} className="flex items-start space-x-2 p-2 bg-gray-50 rounded-lg border border-gray-200">
-                      <div className={`w-6 h-6 bg-${item.color}-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5`}>
-                        <item.icon className={`w-3 h-3 text-${item.color}-600`} />
-                      </div>
-                      <div className="flex-1">
-                        <h3 className="text-sm font-semibold text-gray-900">{item.title}</h3>
-                        <p className="text-xs text-gray-600">{item.description}</p>
-                      </div>
+              <div className="space-y-3">
+                {[
+                  { icon: FaExpand, color: 'text-blue-400', bg: 'bg-blue-400/10', title: 'Fullscreen Lock', desc: 'Exiting fullscreen is strictly monitored.' },
+                  { icon: FaVideo, color: 'text-emerald-400', bg: 'bg-emerald-400/10', title: 'Camera Stream', desc: 'Face must remain visible and centered.' },
+                  { icon: FaClock, color: 'text-purple-400', bg: 'bg-purple-400/10', title: 'Time Allocation', desc: 'Allocate ~45 minutes of uninterrupted time.' },
+                  { icon: FaWifi, color: 'text-indigo-400', bg: 'bg-indigo-400/10', title: 'Network Integrity', desc: 'Maintain a stable broadband connection.' },
+                  { icon: FaBan, color: 'text-rose-400', bg: 'bg-rose-400/10', title: 'Single Access Token', desc: 'Tokens expire immediately upon completion.' }
+                ].map((item, index) => (
+                  <div key={index} className="flex items-start space-x-4 p-4 bg-white/[0.02] border border-white/5 rounded-xl hover:bg-white/[0.04] transition-colors">
+                    <div className={`w-8 h-8 ${item.bg} rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5`}>
+                      <item.icon className={`w-4 h-4 ${item.color}`} />
                     </div>
-                  ))}
-                </div>
+                    <div>
+                      <h3 className="text-sm font-bold text-slate-200">{item.title}</h3>
+                      <p className="text-xs text-slate-400 mt-1">{item.desc}</p>
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
 
             {/* Popup Footer */}
-            <div className="bg-gray-50 px-4 py-3 border-t border-gray-200">
+            <div className="bg-black/50 p-5 border-t border-white/5">
               <button
                 onClick={handleAcceptTerms}
-                className="w-full bg-gray-900 text-white py-2 px-4 rounded-lg text-sm font-semibold hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-colors duration-200"
+                className="w-full bg-white text-[#0a0f1c] py-3.5 px-4 rounded-xl text-sm font-bold uppercase tracking-wider hover:bg-slate-200 transition-colors"
               >
-                Accept & Continue
+                Acknowledge & Accept
               </button>
             </div>
           </div>

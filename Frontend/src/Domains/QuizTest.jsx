@@ -255,59 +255,59 @@ const QuizTest = () => {
   const currentGlobalIndex = getCurrentGlobalIndex();
 
   return (
-    <div className={`min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 ${isFullscreen ? 'fixed inset-0 z-50 bg-white' : ''}`}>
-      {/* Navbar - Similar to Details.jsx */}
-      <nav className="bg-white border-b border-gray-200 shadow-sm">
+    <div className={`min-h-screen bg-[#030712] text-slate-300 ${isFullscreen ? 'fixed inset-0 z-50' : ''}`}>
+      {/* Navbar */}
+      <nav className="bg-[#0a0f1c]/80 backdrop-blur-xl border-b border-white/10 shadow-[0_0_20px_rgba(0,0,0,0.5)]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             {/* Left side: Timer and progress */}
             <div className="flex items-center space-x-4">
               <div className="flex items-center space-x-2">
-                <div className="p-2 bg-blue-100 rounded-lg">
-                  <FaClock className="w-4 h-4 text-blue-600" />
+                <div className="p-2 bg-indigo-500/20 rounded-lg">
+                  <FaClock className="w-4 h-4 text-indigo-400" />
                 </div>
                 <div className="text-center">
-                  <div className={`text-lg font-bold ${timeLeft < 600 ? 'text-red-600' : 'text-gray-900'}`}>
+                  <div className={`text-lg font-bold ${timeLeft < 600 ? 'text-rose-500 animate-pulse' : 'text-white'}`}>
                     {formatTime(timeLeft)}
                   </div>
-                  <div className="text-xs text-gray-500">Time Remaining</div>
+                  <div className="text-xs text-slate-400">Time Remaining</div>
                 </div>
               </div>
 
-              <div className="h-6 w-px bg-gray-300"></div>
+              <div className="h-6 w-px bg-white/10"></div>
 
               <div className="flex items-center space-x-2">
-                <div className="p-2 bg-indigo-100 rounded-lg">
-                  <FaQuestionCircle className="w-4 h-4 text-indigo-600" />
+                <div className="p-2 bg-purple-500/20 rounded-lg">
+                  <FaQuestionCircle className="w-4 h-4 text-purple-400" />
                 </div>
                 <div className="text-center">
-                  <div className="text-lg font-bold text-gray-900">
+                  <div className="text-lg font-bold text-white">
                     {currentGlobalIndex + 1} / {totalQuestions}
                   </div>
-                  <div className="text-xs text-gray-500">Questions</div>
+                  <div className="text-xs text-slate-400">Questions</div>
                 </div>
               </div>
 
-              <div className="h-6 w-px bg-gray-300"></div>
+              <div className="h-6 w-px bg-white/10"></div>
 
               <div className="flex items-center space-x-2">
-                <div className="p-2 bg-green-100 rounded-lg">
-                  <FaCheckCircle className="w-4 h-4 text-green-600" />
+                <div className="p-2 bg-emerald-500/20 rounded-lg">
+                  <FaCheckCircle className="w-4 h-4 text-emerald-400" />
                 </div>
                 <div className="text-center">
-                  <div className="text-lg font-bold text-gray-900">
+                  <div className="text-lg font-bold text-white">
                     {Object.keys(answers).length}
                   </div>
-                  <div className="text-xs text-gray-500">Answered</div>
+                  <div className="text-xs text-slate-400">Answered</div>
                 </div>
               </div>
 
               {/* Progress bar */}
               <div className="hidden md:block w-32">
-                <div className="text-xs text-gray-500 mb-1">Progress: {calculateProgress()}%</div>
-                <div className="w-full bg-gray-200 rounded-full h-2">
+                <div className="text-xs text-slate-400 mb-1">Progress: {calculateProgress()}%</div>
+                <div className="w-full bg-white/5 rounded-full h-2 overflow-hidden border border-white/5">
                   <div 
-                    className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                    className="bg-indigo-500 h-2 rounded-full transition-all duration-300 shadow-[0_0_10px_rgba(99,102,241,0.5)]"
                     style={{ width: `${calculateProgress()}%` }}
                   ></div>
                 </div>
@@ -318,7 +318,7 @@ const QuizTest = () => {
             <div className="flex items-center space-x-3">
               <button
                 onClick={() => setShowSidebar(!showSidebar)}
-                className="p-2 hover:bg-gray-100 rounded-lg transition-colors text-gray-600"
+                className="p-2 hover:bg-white/10 rounded-lg transition-colors text-slate-300"
                 title={showSidebar ? "Hide Sidebar" : "Show Sidebar"}
               >
                 <FaListOl className="w-4 h-4" />
@@ -326,7 +326,7 @@ const QuizTest = () => {
 
               <button
                 onClick={toggleFullscreen}
-                className="p-2 hover:bg-gray-100 rounded-lg transition-colors text-gray-600"
+                className="p-2 hover:bg-white/10 rounded-lg transition-colors text-slate-300"
                 title={isFullscreen ? "Exit Fullscreen" : "Enter Fullscreen"}
               >
                 {isFullscreen ? <FaCompress className="w-4 h-4" /> : <FaExpand className="w-4 h-4" />}
@@ -334,7 +334,7 @@ const QuizTest = () => {
 
               <button
                 onClick={handleSubmit}
-                className="px-4 py-2 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white rounded-lg font-medium transition-all duration-200 flex items-center space-x-2 shadow-sm"
+                className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg font-bold transition-all duration-200 flex items-center space-x-2 shadow-[0_0_15px_rgba(16,185,129,0.3)] hover:shadow-[0_0_20px_rgba(16,185,129,0.5)] uppercase tracking-wider text-sm"
               >
                 <FaPaperPlane className="w-4 h-4" />
                 <span>Submit Quiz</span>
@@ -345,13 +345,12 @@ const QuizTest = () => {
       </nav>
 
       {/* Section Tabs at the top */}
-      <div className="bg-white border-b border-gray-200 shadow-sm">
+      <div className="bg-[#0a0f1c]/50 backdrop-blur-md border-b border-white/10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex space-x-4 py-3 overflow-x-auto">
             {quizData.sections.map((section, index) => {
               const isActive = currentSection === index;
               const sectionStartIndex = quizData.sections.slice(0, index).reduce((sum, s) => sum + s.questions.length, 0);
-              const sectionQuestions = section.questions;
               
               return (
                 <button
@@ -361,23 +360,23 @@ const QuizTest = () => {
                     setCurrentQuestion(0);
                     setVisitedQuestions(prev => new Set([...prev, sectionStartIndex]));
                   }}
-                  className={`flex-shrink-0 px-4 py-2 rounded-lg font-medium transition-all duration-200 flex items-center space-x-3 ${
+                  className={`flex-shrink-0 px-4 py-2 rounded-xl font-medium transition-all duration-300 flex items-center space-x-3 border ${
                     isActive 
-                      ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md' 
-                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      ? 'bg-indigo-600/20 border-indigo-500/50 text-white shadow-[0_0_15px_rgba(99,102,241,0.2)]' 
+                      : 'bg-white/5 border-transparent text-slate-400 hover:bg-white/10 hover:text-slate-200'
                   }`}
                 >
                   <div className="flex items-center space-x-2">
                     <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
-                      isActive ? 'bg-white/20' : 'bg-white'
+                      isActive ? 'bg-indigo-500 shadow-[0_0_10px_rgba(99,102,241,0.5)]' : 'bg-white/10'
                     }`}>
-                      <span className={`font-bold ${isActive ? 'text-white' : 'text-blue-600'}`}>
+                      <span className={`font-bold ${isActive ? 'text-white' : 'text-slate-300'}`}>
                         {index + 1}
                       </span>
                     </div>
                     <div className="text-left">
-                      <div className="font-medium">{section.title}</div>
-                      <div className={`text-xs ${isActive ? 'text-blue-100' : 'text-gray-500'}`}>
+                      <div className="font-medium text-sm tracking-wide">{section.title}</div>
+                      <div className={`text-xs ${isActive ? 'text-indigo-300' : 'text-slate-500'}`}>
                         {section.questions.length} questions
                       </div>
                     </div>
@@ -395,28 +394,29 @@ const QuizTest = () => {
           {/* Left Panel - Question */}
           <div className={`${showSidebar ? 'flex-1' : 'w-full'}`}>
             {/* Current Section Info */}
-            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-200 p-4 mb-6 shadow-sm">
+            <div className="bg-[#0a0f1c]/80 backdrop-blur-xl border border-white/10 rounded-xl p-4 mb-6 shadow-lg relative overflow-hidden">
+              <div className="absolute top-0 left-0 w-1 h-full bg-indigo-500 shadow-[0_0_10px_rgba(99,102,241,0.8)]"></div>
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-3">
-                  <div className="p-2 bg-blue-600 rounded-lg">
-                    <FaBookOpen className="w-5 h-5 text-white" />
+                  <div className="p-2 bg-indigo-500/20 border border-indigo-500/30 rounded-lg">
+                    <FaBookOpen className="w-5 h-5 text-indigo-400" />
                   </div>
                   <div>
-                    <h2 className="text-lg font-bold text-gray-900">{quizData.sections[currentSection].title}</h2>
-                    <p className="text-gray-600 text-sm">{quizData.sections[currentSection].description}</p>
+                    <h2 className="text-lg font-bold text-white tracking-wide">{quizData.sections[currentSection].title}</h2>
+                    <p className="text-slate-400 text-sm">{quizData.sections[currentSection].description}</p>
                   </div>
                 </div>
                 <div className="text-right">
-                  <div className="text-sm text-gray-500">
+                  <div className="text-sm font-semibold text-slate-300">
                     Questions {currentQuestion + 1} / {quizData.sections[currentSection].questions.length}
                   </div>
-                  <div className="text-sm text-gray-600 flex items-center space-x-4">
+                  <div className="text-sm text-slate-400 flex items-center space-x-4 mt-1">
                     <span className="flex items-center">
-                      <div className="w-2 h-2 bg-green-500 rounded-full mr-1"></div>
+                      <div className="w-2 h-2 bg-emerald-500 rounded-full mr-1.5 shadow-[0_0_5px_rgba(16,185,129,0.8)]"></div>
                       Answered: {Object.keys(answers).length}
                     </span>
                     <span className="flex items-center">
-                      <div className="w-2 h-2 bg-yellow-500 rounded-full mr-1"></div>
+                      <div className="w-2 h-2 bg-amber-500 rounded-full mr-1.5 shadow-[0_0_5px_rgba(245,158,11,0.8)]"></div>
                       Pending: {totalQuestions - Object.keys(answers).length}
                     </span>
                   </div>
@@ -425,31 +425,31 @@ const QuizTest = () => {
             </div>
 
             {/* Question Card */}
-            <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6 mb-6">
+            <div className="bg-[#0a0f1c]/80 backdrop-blur-xl rounded-xl shadow-[0_0_30px_rgba(0,0,0,0.5)] border border-white/10 p-6 mb-6">
               <div className="flex items-center justify-between mb-6">
                 <div className="flex items-center space-x-3">
-                  <div className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-4 py-2 rounded-lg font-bold">
+                  <div className="bg-indigo-600 shadow-[0_0_15px_rgba(99,102,241,0.5)] text-white px-4 py-2 rounded-lg font-bold tracking-widest text-sm">
                     Q{currentGlobalIndex + 1}
                   </div>
-                  <span className="text-sm text-gray-500">• {currentQ.type}</span>
+                  <span className="text-sm text-slate-400 font-mono tracking-wide px-2 py-1 bg-white/5 rounded-md border border-white/5">• {currentQ.type}</span>
                 </div>
                 
                 <button
                   onClick={toggleFlagQuestion}
-                  className={`px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors ${
+                  className={`px-4 py-2 rounded-lg flex items-center space-x-2 transition-all duration-300 border ${
                     flaggedQuestions.includes(currentGlobalIndex)
-                      ? 'bg-red-100 text-red-600 hover:bg-red-200'
-                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                      ? 'bg-rose-500/20 border-rose-500/50 text-rose-400 shadow-[0_0_15px_rgba(244,63,94,0.2)]'
+                      : 'bg-white/5 border-white/10 text-slate-300 hover:bg-white/10'
                   }`}
                 >
                   <FaFlag className="w-4 h-4" />
-                  <span>{flaggedQuestions.includes(currentGlobalIndex) ? 'Remove Flag' : 'Flag Question'}</span>
+                  <span className="font-semibold text-sm uppercase tracking-wider">{flaggedQuestions.includes(currentGlobalIndex) ? 'Remove Flag' : 'Flag Question'}</span>
                 </button>
               </div>
 
               {/* Question Text */}
               <div className="mb-8">
-                <h3 className="text-lg font-medium text-gray-900 mb-4">{currentQ.question}</h3>
+                <h3 className="text-xl font-medium text-white mb-6 leading-relaxed">{currentQ.question}</h3>
                 
                 {/* Options */}
                 <div className="space-y-3">
@@ -457,26 +457,26 @@ const QuizTest = () => {
                     <div
                       key={option.id}
                       onClick={() => handleAnswerSelect(currentQ.id, option.id)}
-                      className={`p-4 border rounded-lg cursor-pointer transition-all duration-200 ${
+                      className={`p-4 border rounded-xl cursor-pointer transition-all duration-300 group ${
                         answers[currentQ.id] === option.id
-                          ? 'border-blue-500 bg-blue-50 shadow-sm'
-                          : 'border-gray-200 hover:border-blue-300 hover:bg-gray-50'
+                          ? 'border-indigo-500 bg-indigo-500/10 shadow-[0_0_20px_rgba(99,102,241,0.15)]'
+                          : 'border-white/10 hover:border-white/20 hover:bg-white/5'
                       }`}
                     >
-                      <div className="flex items-center space-x-3">
-                        <div className={`w-6 h-6 rounded-full border flex items-center justify-center ${
+                      <div className="flex items-center space-x-4">
+                        <div className={`w-8 h-8 rounded-full flex items-center justify-center border-2 transition-colors ${
                           answers[currentQ.id] === option.id
-                            ? 'border-blue-500 bg-blue-500 text-white'
-                            : 'border-gray-300 bg-white'
+                            ? 'border-indigo-500 bg-indigo-500 text-white shadow-[0_0_10px_rgba(99,102,241,0.5)]'
+                            : 'border-slate-500/50 bg-transparent text-slate-400 group-hover:border-slate-400'
                         }`}>
                           {answers[currentQ.id] === option.id ? (
-                            <FaCheck className="w-3 h-3" />
+                            <FaCheck className="w-3.5 h-3.5" />
                           ) : (
-                            <span className="text-sm font-medium">{option.id.toUpperCase()}</span>
+                            <span className="text-sm font-bold">{option.id.toUpperCase()}</span>
                           )}
                         </div>
-                        <span className={`font-medium ${
-                          answers[currentQ.id] === option.id ? 'text-blue-700' : 'text-gray-700'
+                        <span className={`font-medium text-lg ${
+                          answers[currentQ.id] === option.id ? 'text-indigo-300' : 'text-slate-300 group-hover:text-white'
                         }`}>
                           {option.text}
                         </span>
@@ -487,27 +487,27 @@ const QuizTest = () => {
               </div>
 
               {/* Navigation Buttons */}
-              <div className="flex justify-between pt-6 border-t border-gray-200">
+              <div className="flex justify-between pt-6 border-t border-white/10 mt-8">
                 <button
                   onClick={prevQuestion}
                   disabled={currentGlobalIndex === 0}
-                  className={`px-6 py-3 rounded-lg font-medium flex items-center space-x-2 transition-colors ${
+                  className={`px-6 py-3 rounded-lg font-bold uppercase tracking-wider text-sm flex items-center space-x-2 transition-all ${
                     currentGlobalIndex === 0
-                      ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                      : 'bg-blue-100 text-blue-600 hover:bg-blue-200'
+                      ? 'bg-white/5 text-slate-600 cursor-not-allowed border border-white/5'
+                      : 'bg-white/5 border border-white/10 text-slate-300 hover:bg-white/10'
                   }`}
                 >
                   <FaArrowLeft className="w-4 h-4" />
-                  <span>Previous Question</span>
+                  <span>Previous</span>
                 </button>
 
                 <button
                   onClick={nextQuestion}
                   disabled={currentGlobalIndex === totalQuestions - 1}
-                  className={`px-6 py-3 rounded-lg font-medium flex items-center space-x-2 transition-colors ${
+                  className={`px-8 py-3 rounded-lg font-bold uppercase tracking-wider text-sm flex items-center space-x-2 transition-all ${
                     currentGlobalIndex === totalQuestions - 1
-                      ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                      : 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white'
+                      ? 'bg-white/5 text-slate-600 cursor-not-allowed border border-white/5'
+                      : 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-[0_0_20px_rgba(79,70,229,0.4)]'
                   }`}
                 >
                   <span>Next Question</span>
@@ -520,23 +520,22 @@ const QuizTest = () => {
           {/* Right Sidebar - Question List */}
           {showSidebar && (
             <div className="w-80 flex-shrink-0">
-              <div className="bg-white rounded-xl shadow-lg border border-gray-200 sticky top-6">
+              <div className="bg-[#0a0f1c]/80 backdrop-blur-xl rounded-xl shadow-[0_0_30px_rgba(0,0,0,0.5)] border border-white/10 sticky top-24 overflow-hidden">
                 {/* Sidebar Header */}
-                <div className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white p-4 rounded-t-xl">
+                <div className="bg-indigo-900/30 border-b border-indigo-500/20 p-5">
                   <div className="flex items-center justify-between">
-                    <h3 className="font-bold text-lg">Questions</h3>
-                    <span className="text-sm bg-white/20 px-2 py-1 rounded">
+                    <h3 className="font-bold text-lg text-white tracking-wide">Questions</h3>
+                    <span className="text-xs font-mono bg-indigo-500/30 text-indigo-300 px-3 py-1 rounded-full border border-indigo-500/30">
                       {Object.keys(answers).length}/{totalQuestions}
                     </span>
                   </div>
-                  <p className="text-blue-100 text-sm mt-1">Click to jump to any question</p>
+                  <p className="text-indigo-400 text-xs mt-2 uppercase tracking-wider font-semibold">Click to jump to any question</p>
                 </div>
 
                 {/* Question Grid */}
-                <div className="p-4 max-h-[calc(100vh-200px)] overflow-y-auto">
+                <div className="p-5 max-h-[calc(100vh-250px)] overflow-y-auto custom-scrollbar">
                   <div className="grid grid-cols-5 gap-3">
                     {Array.from({ length: totalQuestions }).map((_, index) => {
-                      // Check question status
                       const isAnswered = answers[getQuestionIdByIndex(index)];
                       const isFlagged = flaggedQuestions.includes(index);
                       const isCurrent = index === currentGlobalIndex;
@@ -546,21 +545,21 @@ const QuizTest = () => {
                           key={index}
                           onClick={() => goToQuestion(index)}
                           className={`
-                            aspect-square rounded-lg flex items-center justify-center font-medium transition-all relative
+                            aspect-square rounded-xl flex items-center justify-center font-bold text-sm transition-all relative border
                             ${isCurrent 
-                              ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg transform scale-105' 
+                              ? 'bg-indigo-600 border-indigo-400 text-white shadow-[0_0_15px_rgba(99,102,241,0.6)] transform scale-110 z-10' 
                               : isAnswered
-                              ? 'bg-green-100 text-green-700 hover:bg-green-200'
+                              ? 'bg-emerald-500/20 border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/30'
                               : isFlagged
-                              ? 'bg-red-100 text-red-700 hover:bg-red-200'
-                              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                              ? 'bg-rose-500/20 border-rose-500/30 text-rose-400 hover:bg-rose-500/30'
+                              : 'bg-white/5 border-white/10 text-slate-400 hover:bg-white/10 hover:text-white'
                             }
                           `}
                           title={`Question ${index + 1}${isFlagged ? ' (Flagged)' : ''}`}
                         >
                           {index + 1}
                           {isFlagged && (
-                            <FaFlag className="absolute -top-1 -right-1 w-3 h-3 text-red-500" />
+                            <FaFlag className="absolute -top-1.5 -right-1.5 w-3.5 h-3.5 text-rose-500 filter drop-shadow-[0_0_3px_rgba(244,63,94,0.8)]" />
                           )}
                         </button>
                       );
@@ -569,15 +568,15 @@ const QuizTest = () => {
                 </div>
 
                 {/* Quick Stats */}
-                <div className="border-t border-gray-200 p-4 bg-gray-50 rounded-b-xl">
-                  <div className="grid grid-cols-2 gap-3 text-sm">
-                    <div className="text-center p-2 bg-white rounded border">
-                      <div className="font-bold text-gray-900">{Object.keys(answers).length}</div>
-                      <div className="text-gray-600">Answered</div>
+                <div className="border-t border-white/10 p-5 bg-black/40">
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div className="text-center p-3 bg-white/5 rounded-xl border border-white/10 backdrop-blur-sm">
+                      <div className="font-bold text-emerald-400 text-xl">{Object.keys(answers).length}</div>
+                      <div className="text-slate-400 text-xs uppercase tracking-wider font-semibold mt-1">Answered</div>
                     </div>
-                    <div className="text-center p-2 bg-white rounded border">
-                      <div className="font-bold text-gray-900">{totalQuestions - Object.keys(answers).length}</div>
-                      <div className="text-gray-600">Pending</div>
+                    <div className="text-center p-3 bg-white/5 rounded-xl border border-white/10 backdrop-blur-sm">
+                      <div className="font-bold text-amber-400 text-xl">{totalQuestions - Object.keys(answers).length}</div>
+                      <div className="text-slate-400 text-xs uppercase tracking-wider font-semibold mt-1">Pending</div>
                     </div>
                   </div>
                 </div>
@@ -589,29 +588,29 @@ const QuizTest = () => {
 
       {/* Submit Confirmation Modal */}
       {showSubmitConfirm && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-xl max-w-md w-full">
-            <div className="p-6">
-              <div className="flex items-center space-x-3 mb-4">
-                <div className="p-2 bg-red-100 rounded-lg">
-                  <FaExclamationTriangle className="w-6 h-6 text-red-600" />
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-[#0a0f1c] border border-white/10 rounded-2xl shadow-[0_0_50px_rgba(0,0,0,0.8)] max-w-md w-full overflow-hidden">
+            <div className="p-8">
+              <div className="flex items-center space-x-4 mb-6">
+                <div className="p-3 bg-rose-500/20 rounded-xl border border-rose-500/30">
+                  <FaExclamationTriangle className="w-8 h-8 text-rose-500 shadow-rose-500" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-semibold text-gray-900">Submit Quiz</h3>
-                  <p className="text-sm text-gray-600 mt-1">Are you sure you want to submit?</p>
+                  <h3 className="text-2xl font-bold text-white tracking-wide">Submit Quiz</h3>
+                  <p className="text-sm text-slate-400 mt-1">Are you sure you want to finalize?</p>
                 </div>
               </div>
               
-              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
-                <div className="flex items-start space-x-2">
-                  <FaExclamationTriangle className="w-4 h-4 text-yellow-600 mt-0.5 flex-shrink-0" />
+              <div className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-5 mb-8">
+                <div className="flex items-start space-x-3">
+                  <FaExclamationTriangle className="w-5 h-5 text-amber-500 mt-0.5 flex-shrink-0" />
                   <div>
-                    <p className="text-sm text-yellow-800 font-medium">Important: This action cannot be undone</p>
-                    <p className="text-xs text-yellow-600 mt-1">
-                      You have answered {Object.keys(answers).length} out of {totalQuestions} questions.
+                    <p className="text-sm text-amber-400 font-bold uppercase tracking-wider">Warning</p>
+                    <p className="text-sm text-amber-200/80 mt-2 leading-relaxed">
+                      This action cannot be undone. You have answered <strong className="text-white">{Object.keys(answers).length}</strong> out of <strong className="text-white">{totalQuestions}</strong> questions.
                       {totalQuestions - Object.keys(answers).length > 0 && (
-                        <span className="block mt-1">
-                          You have {totalQuestions - Object.keys(answers).length} unanswered questions.
+                        <span className="block mt-2 font-medium text-rose-400">
+                          You have {totalQuestions - Object.keys(answers).length} unanswered questions!
                         </span>
                       )}
                     </p>
@@ -619,18 +618,18 @@ const QuizTest = () => {
                 </div>
               </div>
 
-              <div className="flex space-x-3">
+              <div className="flex space-x-4">
                 <button
                   onClick={() => setShowSubmitConfirm(false)}
-                  className="flex-1 px-4 py-2.5 border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors"
+                  className="flex-1 px-4 py-3 bg-white/5 border border-white/10 text-slate-300 rounded-xl font-bold uppercase tracking-wider text-sm hover:bg-white/10 transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={confirmSubmit}
-                  className="flex-1 px-4 py-2.5 bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-700 hover:to-rose-700 text-white rounded-lg font-medium transition-colors flex items-center justify-center space-x-2"
+                  className="flex-1 px-4 py-3 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-bold uppercase tracking-wider text-sm transition-colors flex items-center justify-center space-x-2 shadow-[0_0_20px_rgba(16,185,129,0.4)]"
                 >
-                  <FaCheck className="w-4 h-4" />
+                  <FaCheck className="w-5 h-5" />
                   <span>Submit Quiz</span>
                 </button>
               </div>

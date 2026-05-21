@@ -1,14 +1,20 @@
 /* Frontend/src/index.css */
 @import "tailwindcss";
 
-/* Custom styles */
-body {
-  font-family: 'Inter', sans-serif;
-  margin: 0;
-  padding: 0;
+@layer base {
+  body {
+    @apply bg-[#030712] text-slate-200 antialiased font-sans selection:bg-indigo-500/30;
+    margin: 0;
+    padding: 0;
+  }
 }
 
-/* Optional: Add custom gradients */
-.bg-gradient-interview {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+@layer utilities {
+  .bg-gradient-interview {
+    background: linear-gradient(135deg, rgba(79, 70, 229, 0.2) 0%, rgba(147, 51, 234, 0.2) 100%);
+  }
+  
+  .glass-panel {
+    @apply bg-[#0a0f1c]/80 backdrop-blur-xl border border-white/10 shadow-[0_8px_30px_rgb(0,0,0,0.5)];
+  }
 }

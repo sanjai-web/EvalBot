@@ -35,14 +35,17 @@ const NotFound = () => {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 text-gray-900 overflow-hidden relative">
+    <div className="min-h-screen bg-[#030712] text-slate-300 overflow-hidden relative selection:bg-indigo-500/30">
       {/* Animated Background */}
-      <div className="absolute inset-0">
+      <div className="absolute inset-0 z-0">
+        <div className="absolute top-[20%] left-[10%] w-[30%] h-[30%] rounded-full bg-indigo-900/20 blur-[120px] mix-blend-screen" />
+        <div className="absolute bottom-[20%] right-[10%] w-[30%] h-[30%] rounded-full bg-purple-900/20 blur-[120px] mix-blend-screen" />
+        
         {/* Data Particles */}
         {particles.map((particle) => (
           <div
             key={particle.id}
-            className="absolute rounded-full animate-pulse"
+            className="absolute rounded-full animate-pulse opacity-50"
             style={{
               left: `${particle.x}%`,
               top: `${particle.y}%`,
@@ -57,11 +60,11 @@ const NotFound = () => {
         ))}
 
         {/* Circuit Pattern */}
-        <div className="absolute inset-0 opacity-5">
+        <div className="absolute inset-0 opacity-10">
           <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
             <defs>
               <pattern id="circuit" x="0" y="0" width="100" height="100" patternUnits="userSpaceOnUse">
-                <path d="M10 10 L90 10 M50 10 L50 90 M10 50 L90 50" stroke="#3B82F6" strokeWidth="0.5" fill="none"/>
+                <path d="M10 10 L90 10 M50 10 L50 90 M10 50 L90 50" stroke="#4f46e5" strokeWidth="0.5" fill="none"/>
                 <circle cx="10" cy="10" r="2" fill="#8B5CF6"/>
                 <circle cx="90" cy="10" r="2" fill="#8B5CF6"/>
                 <circle cx="50" cy="90" r="2" fill="#8B5CF6"/>
@@ -73,13 +76,13 @@ const NotFound = () => {
 
         {/* Floating AI Elements */}
         <div className="absolute top-1/4 left-1/4 animate-bounce">
-          <FaMicrochip className="w-12 h-12 text-blue-400 opacity-20" />
+          <FaMicrochip className="w-12 h-12 text-indigo-400 opacity-20" />
         </div>
         <div className="absolute top-3/4 right-1/4 animate-pulse">
           <FaCode className="w-10 h-10 text-purple-400 opacity-20" />
         </div>
         <div className="absolute bottom-1/4 left-1/3 animate-spin" style={{animationDuration: '10s'}}>
-          <FaBrain className="w-8 h-8 text-indigo-400 opacity-20" />
+          <FaBrain className="w-8 h-8 text-pink-400 opacity-20" />
         </div>
       </div>
 
@@ -88,17 +91,17 @@ const NotFound = () => {
         <div className="max-w-4xl mx-auto text-center">
           {/* 404 Number with Typing Effect */}
           <div className="relative mb-8">
-            <div className="text-8xl sm:text-[10rem] md:text-[12rem] font-black relative font-mono">
-              <span className="bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 bg-clip-text text-transparent">
+            <div className="text-8xl sm:text-[10rem] md:text-[12rem] font-black relative font-mono tracking-tight">
+              <span className="bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 bg-clip-text text-transparent">
                 {typedText}
               </span>
-              <span className="animate-blink text-blue-600">|</span>
+              <span className="animate-blink text-indigo-500">|</span>
             </div>
 
             {/* AI Robot */}
             <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 animate-float-robot">
-              <div className="w-20 h-20 bg-gradient-to-r from-blue-400 to-purple-500 rounded-full flex items-center justify-center shadow-2xl border-4 border-white">
-                <FaRobot className="w-10 h-10 text-white" />
+              <div className="w-20 h-20 bg-[#0a0f1c] border border-white/10 rounded-full flex items-center justify-center shadow-[0_0_30px_rgba(99,102,241,0.5)]">
+                <FaRobot className="w-10 h-10 text-indigo-400" />
               </div>
             </div>
           </div>
@@ -106,12 +109,11 @@ const NotFound = () => {
           {/* Error Content */}
           <div className="space-y-8">
             <div className="animate-fade-in-up">
-              <h1 className="text-4xl sm:text-5xl font-bold mb-4 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                Can't Find This Page
+              <h1 className="text-4xl sm:text-5xl font-bold mb-4 text-white">
+                Sector Not Found
               </h1>
-              <p className="text-xl text-gray-600 max-w-2xl mx-auto leading-relaxed">
-                Our intelligent system seems to have encountered an error. The page you're looking for doesn't exist in our database.
-                Let's get you back on track!
+              <p className="text-lg text-slate-400 max-w-2xl mx-auto leading-relaxed">
+                The AI agent could not locate the requested sector within the mainframe. The connection parameters might be invalid or the sector has been heavily encrypted.
               </p>
             </div>
 
@@ -119,42 +121,26 @@ const NotFound = () => {
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center animate-fade-in-up" style={{animationDelay: '0.5s'}}>
               <Link
                 to="/"
-                className="group relative overflow-hidden bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white font-bold py-4 px-8 rounded-2xl shadow-2xl transform hover:scale-105 transition-all duration-300"
+                className="group relative overflow-hidden bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-4 px-8 rounded-xl shadow-[0_0_20px_rgba(79,70,229,0.4)] transform hover:scale-105 transition-all duration-300 border border-indigo-500/50"
               >
-                <div className="absolute inset-0 bg-white/20 transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
-                <span className="relative flex items-center">
+                <div className="absolute inset-0 bg-white/10 transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
+                <span className="relative flex items-center uppercase tracking-wider text-sm">
                   <FaHome className="w-5 h-5 mr-3 group-hover:scale-110 transition-transform" />
-                  Return Home
+                  Initialize Core
                 </span>
               </Link>
 
               <button
                 onClick={() => window.history.back()}
-                className="group relative overflow-hidden bg-white/80 backdrop-blur-sm hover:bg-white text-gray-800 font-bold py-4 px-8 rounded-2xl shadow-2xl transform hover:scale-105 transition-all duration-300 border border-gray-300"
+                className="group relative overflow-hidden bg-white/5 backdrop-blur-md hover:bg-white/10 text-white font-bold py-4 px-8 rounded-xl transform hover:scale-105 transition-all duration-300 border border-white/10"
               >
-                <div className="absolute inset-0 bg-gray-100/50 transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
-                <span className="relative flex items-center">
+                <div className="absolute inset-0 bg-white/5 transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
+                <span className="relative flex items-center uppercase tracking-wider text-sm">
                   <FaArrowLeft className="w-5 h-5 mr-3 group-hover:-translate-x-1 transition-transform" />
-                  Go Back
+                  Return Previous
                 </span>
               </button>
             </div>
-
-            {/* AI Stats */}
-            {/* <div className="grid grid-cols-3 gap-4 max-w-md mx-auto animate-fade-in-up" style={{animationDelay: '1s'}}>
-              <div className="bg-white/60 backdrop-blur-sm rounded-xl p-4 border border-gray-200 shadow-lg">
-                <div className="text-2xl font-bold text-blue-600">AI</div>
-                <div className="text-sm text-gray-500">Powered</div>
-              </div>
-              <div className="bg-white/60 backdrop-blur-sm rounded-xl p-4 border border-gray-200 shadow-lg">
-                <div className="text-2xl font-bold text-purple-600">404</div>
-                <div className="text-sm text-gray-500">Error</div>
-              </div>
-              <div className="bg-white/60 backdrop-blur-sm rounded-xl p-4 border border-gray-200 shadow-lg">
-                <div className="text-2xl font-bold text-indigo-600">∞</div>
-                <div className="text-sm text-gray-500">Learning</div>
-              </div> */}
-            {/* </div> */}
           </div>
         </div>
       </div>
@@ -162,10 +148,10 @@ const NotFound = () => {
       {/* Enhanced CSS Animations */}
       <style jsx>{`
         @keyframes float-robot {
-          0%, 100% { transform: translateY(0px) translateX(0px) rotate(0deg); }
-          25% { transform: translateY(-10px) translateX(5px) rotate(2deg); }
-          50% { transform: translateY(-5px) translateX(-5px) rotate(-2deg); }
-          75% { transform: translateY(5px) translateX(3px) rotate(1deg); }
+          0%, 100% { transform: translateY(-50%) translateX(-50%) rotate(0deg); }
+          25% { transform: translateY(calc(-50% - 10px)) translateX(calc(-50% + 5px)) rotate(2deg); }
+          50% { transform: translateY(calc(-50% - 5px)) translateX(calc(-50% - 5px)) rotate(-2deg); }
+          75% { transform: translateY(calc(-50% + 5px)) translateX(calc(-50% + 3px)) rotate(1deg); }
         }
 
         @keyframes blink {
