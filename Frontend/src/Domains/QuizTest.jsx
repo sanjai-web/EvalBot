@@ -14,96 +14,136 @@ const QuizTest = () => {
   const navigate = useNavigate();
   const interviewData = location.state?.interviewData;
   
-  // Mock quiz data - in real app, this would come from API
-  const [quizData, setQuizData] = useState({
-    sections: [
-      {
-        id: 1,
-        title: "Core Concepts",
-        description: "Fundamental knowledge questions",
-        questions: [
-          {
-            id: 1,
-            question: "What is the time complexity of binary search?",
-            options: [
-              { id: 'a', text: "O(1)" },
-              { id: 'b', text: "O(log n)" },
-              { id: 'c', text: "O(n)" },
-              { id: 'd', text: "O(n²)" }
-            ],
-            correctAnswer: 'b',
-            type: "multiple-choice",
-            section: "Core Concepts"
-          },
-          {
-            id: 2,
-            question: "Which data structure uses LIFO principle?",
-            options: [
-              { id: 'a', text: "Queue" },
-              { id: 'b', text: "Stack" },
-              { id: 'c', text: "Linked List" },
-              { id: 'd', text: "Tree" }
-            ],
-            correctAnswer: 'b',
-            type: "multiple-choice",
-            section: "Core Concepts"
-          }
-        ]
-      },
-      {
-        id: 2,
-        title: "Advanced Topics",
-        description: "Complex scenarios and problem-solving",
-        questions: [
-          {
-            id: 3,
-            question: "Which algorithm is used for shortest path finding?",
-            options: [
-              { id: 'a', text: "Dijkstra's Algorithm" },
-              { id: 'b', text: "Bubble Sort" },
-              { id: 'c', text: "Binary Search" },
-              { id: 'd', text: "Quick Sort" }
-            ],
-            correctAnswer: 'a',
-            type: "multiple-choice",
-            section: "Advanced Topics"
-          },
-          {
-            id: 4,
-            question: "What does SQL stand for?",
-            options: [
-              { id: 'a', text: "Structured Query Language" },
-              { id: 'b', text: "Simple Question Language" },
-              { id: 'c', text: "Structured Question Logic" },
-              { id: 'd', text: "Sequential Query Language" }
-            ],
-            correctAnswer: 'a',
-            type: "multiple-choice",
-            section: "Advanced Topics"
-          }
-        ]
-      },
-      {
-        id: 3,
-        title: "Problem Solving",
-        description: "Practical application questions",
-        questions: [
-          {
-            id: 5,
-            question: "Which design pattern is used for creating objects?",
-            options: [
-              { id: 'a', text: "Singleton" },
-              { id: 'b', text: "Factory" },
-              { id: 'c', text: "Observer" },
-              { id: 'd', text: "Decorator" }
-            ],
-            correctAnswer: 'b',
-            type: "multiple-choice",
-            section: "Problem Solving"
-          }
-        ]
-      }
-    ]
+  // Load real quiz data from backend collection, fallback to mock data if empty
+  const backendQuestions = interviewData?.collection?.questions;
+  
+  const [quizData, setQuizData] = useState(() => {
+    if (backendQuestions && backendQuestions.length > 0) {
+      let globalQuestionId = 1;
+      return {
+        sections: backendQuestions.map((section, sIdx) => ({
+          id: section.id || sIdx + 1,
+          title: section.topic || `Section ${sIdx + 1}`,
+          description: `Level: ${section.level || 'Intermediate'}`,
+          questions: (section.questions || []).map((q) => {
+            const letters = ['a', 'b', 'c', 'd', 'e', 'f'];
+            
+            // Determine correct answer ID
+            let correctId = 'a';
+            const optIndex = q.options.findIndex(opt => opt === q.correctAnswer);
+            if (optIndex !== -1) {
+              correctId = letters[optIndex]; // Match exact text
+            } else if (q.correctAnswer && q.correctAnswer.length === 1) {
+              correctId = q.correctAnswer.toLowerCase(); // Match "A", "B", etc.
+            }
+            
+            return {
+              id: globalQuestionId++,
+              question: q.question,
+              options: q.options.map((opt, oIdx) => ({
+                id: letters[oIdx],
+                text: opt
+              })),
+              correctAnswer: correctId,
+              type: "multiple-choice",
+              section: section.topic || `Section ${sIdx + 1}`
+            };
+          })
+        }))
+      };
+    }
+
+    // Fallback to mock data if no real data
+    return {
+      sections: [
+        {
+          id: 1,
+          title: "Core Concepts",
+          description: "Fundamental knowledge questions",
+          questions: [
+            {
+              id: 1,
+              question: "What is the time complexity of binary search?",
+              options: [
+                { id: 'a', text: "O(1)" },
+                { id: 'b', text: "O(log n)" },
+                { id: 'c', text: "O(n)" },
+                { id: 'd', text: "O(n²)" }
+              ],
+              correctAnswer: 'b',
+              type: "multiple-choice",
+              section: "Core Concepts"
+            },
+            {
+              id: 2,
+              question: "Which data structure uses LIFO principle?",
+              options: [
+                { id: 'a', text: "Queue" },
+                { id: 'b', text: "Stack" },
+                { id: 'c', text: "Linked List" },
+                { id: 'd', text: "Tree" }
+              ],
+              correctAnswer: 'b',
+              type: "multiple-choice",
+              section: "Core Concepts"
+            }
+          ]
+        },
+        {
+          id: 2,
+          title: "Advanced Topics",
+          description: "Complex scenarios and problem-solving",
+          questions: [
+            {
+              id: 3,
+              question: "Which algorithm is used for shortest path finding?",
+              options: [
+                { id: 'a', text: "Dijkstra's Algorithm" },
+                { id: 'b', text: "Bubble Sort" },
+                { id: 'c', text: "Binary Search" },
+                { id: 'd', text: "Quick Sort" }
+              ],
+              correctAnswer: 'a',
+              type: "multiple-choice",
+              section: "Advanced Topics"
+            },
+            {
+              id: 4,
+              question: "What does SQL stand for?",
+              options: [
+                { id: 'a', text: "Structured Query Language" },
+                { id: 'b', text: "Simple Question Language" },
+                { id: 'c', text: "Structured Question Logic" },
+                { id: 'd', text: "Sequential Query Language" }
+              ],
+              correctAnswer: 'a',
+              type: "multiple-choice",
+              section: "Advanced Topics"
+            }
+          ]
+        },
+        {
+          id: 3,
+          title: "Problem Solving",
+          description: "Practical application questions",
+          questions: [
+            {
+              id: 5,
+              question: "Which design pattern is used for creating objects?",
+              options: [
+                { id: 'a', text: "Singleton" },
+                { id: 'b', text: "Factory" },
+                { id: 'c', text: "Observer" },
+                { id: 'd', text: "Decorator" }
+              ],
+              correctAnswer: 'b',
+              type: "multiple-choice",
+              section: "Problem Solving"
+            }
+          ]
+        }
+      ]
+    };
   });
 
   const [currentSection, setCurrentSection] = useState(0);

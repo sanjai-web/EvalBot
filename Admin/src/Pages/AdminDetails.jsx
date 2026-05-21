@@ -299,9 +299,23 @@ function AdminDetails() {
         );
 
         if (!response.ok) throw new Error("Failed to update collection");
+
+        // Get the updated collection from server response
+        const updatedCollection = await response.json();
+        const saved = updatedCollection.collection || updatedCollection;
+
+        // Sync local state with server response
+        setEditedCollection(saved);
+
+        // Replace router state so page refresh loads updated data
+        navigate(location.pathname, {
+          replace: true,
+          state: { collection: saved },
+        });
       } catch (err) {
         console.error("Error updating collection:", err);
         alert("Failed to update collection");
+        return; // Don't exit editing mode if save failed
       } finally {
         setIsSaving(false);
       }
@@ -489,12 +503,7 @@ function AdminDetails() {
   ).length;
 
   return (
-    <div className="min-h-screen relative overflow-hidden pb-20">
-      {/* Decorative Background Elements */}
-      <div className="fixed top-0 left-0 w-full h-full pointer-events-none z-[-1]">
-        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-indigo-600 rounded-full blur-[120px] opacity-10" />
-        <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-purple-600 rounded-full blur-[120px] opacity-10" />
-      </div>
+    <div className="min-h-screen bg-slate-50 pb-20">
 
       <header className="glass-panel sticky top-0 z-40 border-b border-slate-200 mb-10 shadow-lg">
         <div className="max-w-[1400px] mx-auto px-6 py-5">
@@ -531,9 +540,9 @@ function AdminDetails() {
         </div>
       </header>
 
-      <div className="max-w-[1400px] mx-auto px-6 space-y-8">
+      <div className="max-w-[1400px] mx-auto px-6 space-y-8 mt-8 " >
         {/* Collection Details Section */}
-        <div className="glass-panel rounded-2xl border border-slate-200 overflow-hidden shadow-[0_0_30px_rgba(0,0,0,0.5)] max-w-4xl">
+        <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm max-w-6xl mx-auto">
           <div className="bg-gradient-to-r from-indigo-500/10 to-purple-500/10 border-b border-slate-200 p-5 relative overflow-hidden">
             <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500 rounded-full blur-[100px] opacity-20 -mt-20 -mr-20 pointer-events-none" />
 
@@ -779,7 +788,7 @@ function AdminDetails() {
             <div className="glass-card rounded-xl p-4 border border-slate-100 mb-5">
               <h3 className="text-xs font-bold text-slate-500 tracking-widest uppercase mb-3 flex items-center space-x-2">
                 <FileText className="w-4 h-4 text-indigo-400" />
-                <span>Mission Briefing</span>
+                <span>Description</span>
               </h3>
               {isEditing ? (
                 <textarea
@@ -815,12 +824,12 @@ function AdminDetails() {
                 ) : isEditing ? (
                   <>
                     <Save className="w-4 h-4" />
-                    <span>SAVE CONFIGURATION</span>
+                    <span>Save Changes</span>
                   </>
                 ) : (
                   <>
                     <Edit className="w-4 h-4" />
-                    <span>MODIFY PARAMETERS</span>
+                    <span>Edit Details</span>
                   </>
                 )}
               </button>
@@ -834,17 +843,17 @@ function AdminDetails() {
                   className="flex-1 py-2.5 text-sm bg-white/90 border border-slate-200 text-slate-600 rounded-xl font-bold tracking-wide hover:bg-white hover:text-slate-900 transition-all flex items-center justify-center space-x-2 outline-none focus:ring-2 focus:ring-white/20"
                 >
                   <X className="w-4 h-4" />
-                  <span>ABORT CHANGES</span>
+                  <span>Cancel</span>
                 </button>
               ) : (
                 <>
                   {isTimedTest && (
                     <button
                       onClick={handleUploadQuestions}
-                      className="flex-1 bg-purple-600 hover:bg-purple-500 text-slate-900 py-2.5 text-sm rounded-xl font-bold tracking-wide transition-all flex items-center justify-center space-x-2 shadow-[0_0_15px_rgba(147,51,234,0.3)]"
+                      className="flex-1 bg-purple-600 hover:bg-purple-500 text-white-900 py-2.5 text-sm rounded-xl font-bold tracking-wide transition-all flex items-center justify-center space-x-2 shadow-[0_0_15px_rgba(147,51,234,0.3)]"
                     >
                       <Upload className="w-4 h-4" />
-                      <span>MANAGE ASSESSMENTS</span>
+                      <span>Manage Questions</span>
                     </button>
                   )}
                   <button
@@ -852,7 +861,7 @@ function AdminDetails() {
                     className="flex-1 py-2.5 text-sm bg-rose-600/20 border border-rose-500/30 text-rose-400 rounded-xl font-bold tracking-wide hover:bg-rose-600 hover:text-slate-900 hover:shadow-[0_0_15px_rgba(225,29,72,0.4)] transition-all flex items-center justify-center space-x-2"
                   >
                     <Trash2 className="w-4 h-4" />
-                    <span>PURGE RECORD</span>
+                    <span>Delete Collection</span>
                   </button>
                 </>
               )}
@@ -861,23 +870,19 @@ function AdminDetails() {
         </div>
 
         {/* Applicant Details Section */}
-        <div className="glass-panel rounded-2xl border border-slate-200 overflow-hidden shadow-[0_0_30px_rgba(0,0,0,0.5)]">
+        <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
           <div className="p-6 md:p-8 border-b border-slate-200 bg-white/90 flex flex-col xl:flex-row xl:items-center justify-between gap-6">
             <div>
               <h2 className="text-2xl font-bold text-slate-900 flex items-center space-x-3 tracking-wide mb-2">
                 <div className="p-2 bg-indigo-500/20 rounded-lg border border-indigo-500/30">
                   <User className="w-6 h-6 text-indigo-400" />
                 </div>
-                <span>Candidate Matrix</span>
+                <span>Applicants</span>
               </h2>
-              <p className="text-indigo-300/80 text-sm font-medium pl-14">
-                <span className="text-emerald-400">
-                  {completedCount} Cleared
-                </span>{" "}
+              <p className="text-slate-500 text-sm font-medium pl-14">
+                <span className="text-emerald-600">{completedCount} Completed</span>{" "}
                 •{" "}
-                <span className="text-amber-400">
-                  {incompleteCount} Pending
-                </span>{" "}
+                <span className="text-amber-600">{incompleteCount} Pending</span>{" "}
                 • {students.length} Total
               </p>
             </div>
@@ -888,7 +893,7 @@ function AdminDetails() {
                 <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-500 w-5 h-5 z-10" />
                 <input
                   type="text"
-                  placeholder="Search identities..."
+                  placeholder="Search candidates..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="relative w-full pl-12 pr-4 py-3 bg-white/80 border border-slate-200 rounded-xl focus:border-indigo-500 text-slate-900 placeholder-gray-500 transition-all outline-none text-sm"
@@ -905,10 +910,10 @@ function AdminDetails() {
                   className="w-full pl-12 pr-10 py-3 bg-white/80 border border-slate-200 rounded-xl focus:border-indigo-500 text-slate-900 outline-none text-sm appearance-none cursor-pointer transition-all hover:border-slate-300"
                 >
                   <option value="all">All Candidates</option>
-                  <option value="completed">Status: Cleared</option>
-                  <option value="incomplete">Status: Pending</option>
-                  <option value="high-to-low">Rank: Alpha (High)</option>
-                  <option value="low-to-high">Rank: Omega (Low)</option>
+                  <option value="completed">Completed</option>
+                  <option value="incomplete">Pending</option>
+                  <option value="high-to-low">Score: High to Low</option>
+                  <option value="low-to-high">Score: Low to High</option>
                 </select>
               </div>
 
@@ -918,7 +923,7 @@ function AdminDetails() {
                   className="bg-emerald-600/20 border border-emerald-500/30 hover:bg-emerald-600 hover:border-emerald-500 text-emerald-400 hover:text-slate-900 px-5 py-3 rounded-xl font-bold tracking-wide flex items-center space-x-2 transition-all duration-300 shadow-sm hover:shadow-[0_0_15px_rgba(16,185,129,0.4)] text-sm"
                 >
                   <Download className="w-4 h-4" />
-                  <span className="hidden sm:inline">EXPORT</span>
+                  <span className="hidden sm:inline">Export</span>
                 </button>
 
                 <button
@@ -926,7 +931,7 @@ function AdminDetails() {
                   className="bg-indigo-600 hover:bg-indigo-500 text-white px-5 py-3 rounded-xl font-bold tracking-wide flex items-center space-x-2 transition-all duration-300 shadow-[0_0_15px_rgba(79,70,229,0.3)] hover:shadow-[0_0_25px_rgba(79,70,229,0.5)] text-sm"
                 >
                   <Plus className="w-4 h-4" />
-                  <span className="hidden sm:inline">ADD RECORD</span>
+                  <span className="hidden sm:inline">Add Candidate</span>
                 </button>
               </div>
             </div>
@@ -934,9 +939,9 @@ function AdminDetails() {
 
           {isLoading ? (
             <div className="flex flex-col items-center justify-center py-20">
-              <Loader2 className="w-12 h-12 text-indigo-500 animate-spin mb-4 drop-shadow-[0_0_10px_rgba(99,102,241,0.5)]" />
-              <p className="text-indigo-300 tracking-widest text-sm font-bold animate-pulse">
-                DECRYPTING DATABASES...
+              <Loader2 className="w-12 h-12 text-indigo-500 animate-spin mb-4" />
+              <p className="text-slate-500 text-sm font-medium animate-pulse">
+                Loading candidates...
               </p>
             </div>
           ) : (
@@ -944,43 +949,27 @@ function AdminDetails() {
               <table className="w-full text-left border-collapse">
                 <thead className="bg-white/90 border-b border-slate-200">
                   <tr>
-                    <th className="px-6 py-5 text-xs font-bold text-slate-500 uppercase tracking-widest whitespace-nowrap">
-                      Identity
-                    </th>
-                    <th className="px-6 py-5 text-xs font-bold text-slate-500 uppercase tracking-widest whitespace-nowrap">
-                      Comms Link (ID)
-                    </th>
-                    <th className="px-6 py-5 text-xs font-bold text-slate-500 uppercase tracking-widest whitespace-nowrap">
-                      Secure Key (Tel)
-                    </th>
-                    <th className="px-6 py-5 text-xs font-bold text-slate-500 uppercase tracking-widest whitespace-nowrap">
-                      <div className="flex items-center space-x-2">
-                        <span>Evaluation</span>
-                        {applicantFilter === "high-to-low" && (
-                          <ArrowDown className="w-3.5 h-3.5 text-indigo-400" />
-                        )}
-                        {applicantFilter === "low-to-high" && (
-                          <ArrowUp className="w-3.5 h-3.5 text-indigo-400" />
-                        )}
+                    <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap">Name</th>
+                    <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap">Email (Login ID)</th>
+                    <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap">Mobile (Password)</th>
+                    <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap">
+                      <div className="flex items-center gap-1">
+                        <span>Score</span>
+                        {applicantFilter === "high-to-low" && <ArrowDown className="w-3 h-3" />}
+                        {applicantFilter === "low-to-high" && <ArrowUp className="w-3 h-3" />}
                       </div>
                     </th>
-                    <th className="px-6 py-5 text-xs font-bold text-slate-500 uppercase tracking-widest whitespace-nowrap">
-                      Phase
-                    </th>
-                    <th className="px-6 py-5 text-xs font-bold text-slate-500 uppercase tracking-widest whitespace-nowrap">
-                      Access
-                    </th>
-                    <th className="px-6 py-5 text-xs font-bold text-slate-500 uppercase tracking-widest text-right whitespace-nowrap">
-                      Override
-                    </th>
+                    <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap">Status</th>
+                    <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap">Access</th>
+                    <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider text-right whitespace-nowrap">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-white/5">
+                <tbody className="divide-y divide-slate-100">
                   {filteredStudents.length > 0 ? (
                     filteredStudents.map((student) => (
                       <tr
                         key={student._id}
-                        className="hover:bg-white/[0.02] transition-colors group"
+                        className="hover:bg-slate-50 transition-colors group"
                       >
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="flex items-center space-x-4">
@@ -1059,12 +1048,12 @@ function AdminDetails() {
                             {student.completionStatus === "Completed" ? (
                               <>
                                 <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
-                                <span>CLEARED</span>
+                                <span>Completed</span>
                               </>
                             ) : (
                               <>
                                 <ClockIcon className="w-4 h-4 flex-shrink-0" />
-                                <span>PENDING</span>
+                                <span>Pending</span>
                               </>
                             )}
                           </button>
@@ -1127,8 +1116,8 @@ function AdminDetails() {
                       <td colSpan="7" className="px-6 py-12 text-center">
                         <div className="flex flex-col items-center">
                           <User className="w-12 h-12 text-gray-600 mb-4" />
-                          <p className="text-slate-500 font-medium tracking-wide">
-                            NO RECORDS DETECTED IN SECTOR
+                          <p className="text-slate-500 font-medium">
+                            No candidates found
                           </p>
                         </div>
                       </td>
@@ -1142,7 +1131,7 @@ function AdminDetails() {
           <div className="px-6 py-4 border-t border-slate-200 bg-white/80">
             <div className="flex items-center justify-between">
               <p className="text-xs font-medium text-slate-500 tracking-wide uppercase">
-                Displaying {filteredStudents.length} of {students.length} nodes
+                Showing {filteredStudents.length} of {students.length} candidates
                 {applicantFilter !== "all" &&
                   ` • Filter Active: ${applicantFilter}`}
               </p>
@@ -1159,28 +1148,24 @@ function AdminDetails() {
               <div className="w-20 h-20 bg-rose-500/10 rounded-full flex items-center justify-center mx-auto mb-6 border border-rose-500/20 shadow-[0_0_20px_rgba(225,29,72,0.2)]">
                 <Trash2 className="w-10 h-10 text-rose-500" />
               </div>
-              <h3 className="text-2xl font-bold text-slate-900 mb-2 tracking-wide">
-                CONFIRM DELETION
-              </h3>
-              <p className="text-slate-500 mb-8">
-                Initiating protocol to purge collection{" "}
-                <span className="text-slate-900 font-bold">
-                  {collection.company}
-                </span>
-                . This action is irreversible. Proceed?
+              <h3 className="text-xl font-bold text-slate-900 mb-2">Delete Collection?</h3>
+              <p className="text-slate-500 mb-6 text-sm">
+                This will permanently delete{" "}
+                <span className="text-slate-900 font-semibold">{collection.company}</span>
+                {" "}and all associated data. This cannot be undone.
               </p>
-              <div className="flex space-x-4">
+              <div className="flex gap-3">
                 <button
                   onClick={() => setShowDeleteConfirm(false)}
-                  className="flex-1 px-4 py-3.5 bg-white/90 border border-slate-200 text-slate-600 rounded-xl font-bold tracking-wide hover:bg-white hover:text-slate-900 transition-all outline-none"
+                  className="flex-1 px-4 py-3 bg-white border border-slate-200 text-slate-600 rounded-xl font-semibold hover:bg-slate-50 transition-colors outline-none"
                 >
-                  ABORT
+                  Cancel
                 </button>
                 <button
                   onClick={handleDeleteCollection}
-                  className="flex-1 px-4 py-3.5 bg-rose-600 hover:bg-rose-500 text-slate-900 rounded-xl font-bold tracking-wide transition-all shadow-[0_0_20px_rgba(225,29,72,0.4)]"
+                  className="flex-1 px-4 py-3 bg-rose-600 hover:bg-rose-700 text-white rounded-xl font-semibold transition-colors"
                 >
-                  PURGE
+                  Delete
                 </button>
               </div>
             </div>
@@ -1197,8 +1182,8 @@ function AdminDetails() {
                 <div className="p-2 bg-indigo-500/20 rounded-xl border border-indigo-500/30">
                   <User className="w-5 h-5 text-indigo-400" />
                 </div>
-                <h2 className="text-lg font-bold text-slate-900 tracking-widest uppercase">
-                  Inject Record
+                <h2 className="text-lg font-bold text-slate-900">
+                  Add Candidate
                 </h2>
               </div>
               <button
@@ -1211,8 +1196,8 @@ function AdminDetails() {
 
             <div className="p-8 space-y-6">
               <div>
-                <label className="block text-xs font-bold text-slate-500 mb-2 tracking-widest uppercase">
-                  Identity <span className="text-rose-500">*</span>
+                <label className="block text-sm font-semibold text-slate-700 mb-2">
+                  Full Name <span className="text-rose-500">*</span>
                 </label>
                 <div className="relative">
                   <User className="absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-500 w-5 h-5" />
@@ -1229,8 +1214,8 @@ function AdminDetails() {
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-500 mb-2 tracking-widest uppercase">
-                  Comms Link (Login ID) <span className="text-rose-500">*</span>
+                <label className="block text-sm font-semibold text-slate-700 mb-2">
+                  Email (Login ID) <span className="text-rose-500">*</span>
                 </label>
                 <div className="relative">
                   <Mail className="absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-500 w-5 h-5" />
@@ -1250,8 +1235,8 @@ function AdminDetails() {
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-500 mb-2 tracking-widest uppercase">
-                  Secure Key (Mobile) <span className="text-rose-500">*</span>
+                <label className="block text-sm font-semibold text-slate-700 mb-2">
+                  Mobile Number (Password) <span className="text-rose-500">*</span>
                 </label>
                 <div className="relative">
                   <Phone className="absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-500 w-5 h-5" />
@@ -1268,7 +1253,7 @@ function AdminDetails() {
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-500 mb-2 tracking-widest uppercase">
+                <label className="block text-sm font-semibold text-slate-700 mb-2">
                   Initial Evaluation Score
                 </label>
                 <div className="relative">
@@ -1304,10 +1289,10 @@ function AdminDetails() {
                     !newApplicant.loginId ||
                     !newApplicant.password
                   }
-                  className="flex-1 px-4 py-4 bg-indigo-600 hover:bg-indigo-500 disabled:bg-gray-700 disabled:text-slate-500 disabled:shadow-none text-white rounded-xl font-bold tracking-wide transition-all shadow-[0_0_20px_rgba(79,70,229,0.4)] flex justify-center items-center space-x-2"
+                  className="flex-1 px-4 py-4 bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-200 disabled:text-slate-400 text-white rounded-xl font-semibold transition-colors flex justify-center items-center gap-2"
                 >
                   <Plus className="w-5 h-5" />
-                  <span>INJECT</span>
+                  <span>Add Candidate</span>
                 </button>
               </div>
             </div>

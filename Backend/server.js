@@ -141,6 +141,10 @@ const collectionSchema = new mongoose.Schema({
     type: Number,
     default: 0
   },
+  questions: {
+    type: Array,
+    default: []
+  },
   createdAt: {
     type: Date,
     default: Date.now
@@ -480,6 +484,10 @@ app.put('/api/collections/:id', async (req, res) => {
       status,
       updatedAt: Date.now()
     };
+
+    if (req.body.questions) {
+      updateData.questions = req.body.questions;
+    }
 
     // Handle level for Computer Science/Role Based
     if (domain === 'Computer Science' || domain === 'Role Based') {

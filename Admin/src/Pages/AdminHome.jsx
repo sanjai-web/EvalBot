@@ -749,12 +749,7 @@ function AdminHome() {
   }
 
   return (
-    <div className="min-h-screen relative overflow-hidden pb-20">
-      {/* Decorative Background Elements */}
-      <div className="fixed top-0 left-0 w-full h-full pointer-events-none z-[-1]">
-        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-indigo-600 rounded-full blur-[120px] opacity-10" />
-        <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-purple-600 rounded-full blur-[120px] opacity-10" />
-      </div>
+    <div className="min-h-screen bg-slate-50 pb-20">
 
       {/* Header */}
       <header className="glass-panel sticky top-0 z-40 border-b border-slate-200 mb-10 shadow-lg">
@@ -765,9 +760,9 @@ function AdminHome() {
                 EVAL<span className="font-light">BOT</span>
               </div>
               <div className="hidden md:flex items-center space-x-3 text-slate-500 text-sm font-medium">
-                <span className="hover:text-indigo-400 cursor-pointer transition-colors">Admin Hub</span>
-                <ChevronRight className="w-4 h-4 text-slate-900/30" />
-                <span className="text-slate-900 bg-white px-3 py-1 rounded-lg border border-slate-200">Collections Console</span>
+                <span className="hover:text-indigo-600 cursor-pointer transition-colors">Dashboard</span>
+                <ChevronRight className="w-4 h-4 text-slate-400" />
+                <span className="text-slate-900 bg-white px-3 py-1 rounded-lg border border-slate-200">Collections</span>
               </div>
             </div>
             <button
@@ -785,71 +780,52 @@ function AdminHome() {
         {/* Welcome Section */}
         <div className="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-6">
           <div>
-            <h1 className="text-5xl font-bold text-slate-900 mb-3 tracking-tight text-gradient">System Overview</h1>
-            <p className="text-slate-500 text-lg">Command and monitor intelligent assessment pipelines.</p>
+            <h1 className="text-4xl font-bold text-slate-900 mb-2 tracking-tight">Dashboard</h1>
+            <p className="text-slate-500">Manage and monitor all interview collections.</p>
           </div>
         </div>
 
         {/* Middle Section: Domain Matrix + Stat Cards side by side */}
         <div className="flex flex-col lg:flex-row gap-6 mb-10">
           {/* Left: Domain Matrix */}
-          <div className="glass-panel rounded-2xl p-6 border border-slate-200 lg:w-[340px] shrink-0">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-sm font-bold tracking-widest text-slate-500 uppercase">Domain Matrix</h2>
+          <div className="bg-white p-6 rounded-2xl border border-slate-200 lg:w-[340px] shrink-0">
+            <div className="flex items-center justify-between mb-5">
+              <h2 className="text-sm font-semibold text-slate-500">By Domain</h2>
               <button
                 onClick={handleExportStats}
-                className="text-xs bg-white/90 hover:bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 px-3 py-1.5 rounded-lg flex items-center gap-2 transition-all font-semibold"
+                className="text-xs bg-indigo-50 hover:bg-indigo-100 text-indigo-600 border border-indigo-200 px-3 py-1.5 rounded-lg flex items-center gap-2 transition-all font-semibold"
               >
                 <Download className="w-3.5 h-3.5" />
-                EXPORT DATA
+                Export
               </button>
             </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="p-4 bg-white/90 rounded-xl border border-slate-100 text-center group hover:bg-white transition-colors">
-                <div className="text-2xl font-bold text-blue-400 mb-1 group-hover:scale-110 transition-transform">{domainStats['Computer Science']}</div>
-                <div className="text-xs text-slate-500 font-medium tracking-wide">CS Core</div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="p-4 bg-slate-50 rounded-xl border border-slate-100 text-center group hover:bg-white hover:border-slate-200 transition-colors">
+                <div className="text-2xl font-bold text-blue-500 mb-1">{domainStats['Computer Science']}</div>
+                <div className="text-xs text-slate-500 font-medium">CS Core</div>
               </div>
-              <div className="p-4 bg-white/90 rounded-xl border border-slate-100 text-center group hover:bg-white transition-colors">
-                <div className="text-2xl font-bold text-purple-400 mb-1 group-hover:scale-110 transition-transform">{domainStats['Role Based']}</div>
-                <div className="text-xs text-slate-500 font-medium tracking-wide">Role-Based</div>
+              <div className="p-4 bg-slate-50 rounded-xl border border-slate-100 text-center group hover:bg-white hover:border-slate-200 transition-colors">
+                <div className="text-2xl font-bold text-purple-500 mb-1">{domainStats['Role Based']}</div>
+                <div className="text-xs text-slate-500 font-medium">Role Based</div>
               </div>
-              <div className="p-4 bg-white/90 rounded-xl border border-slate-100 text-center group hover:bg-white transition-colors">
-                <div className="text-2xl font-bold text-emerald-400 mb-1 group-hover:scale-110 transition-transform">{domainStats['Quiz']}</div>
-                <div className="text-xs text-slate-500 font-medium tracking-wide">Quiz</div>
+              <div className="p-4 bg-slate-50 rounded-xl border border-slate-100 text-center group hover:bg-white hover:border-slate-200 transition-colors">
+                <div className="text-2xl font-bold text-emerald-500 mb-1">{domainStats['Quiz']}</div>
+                <div className="text-xs text-slate-500 font-medium">Quiz</div>
               </div>
-              <div className="p-4 bg-white/90 rounded-xl border border-slate-100 text-center group hover:bg-white transition-colors">
-                <div className="text-2xl font-bold text-rose-400 mb-1 group-hover:scale-110 transition-transform">{domainStats['Code Test']}</div>
-                <div className="text-xs text-slate-500 font-medium tracking-wide">Code Test</div>
+              <div className="p-4 bg-slate-50 rounded-xl border border-slate-100 text-center group hover:bg-white hover:border-slate-200 transition-colors">
+                <div className="text-2xl font-bold text-rose-500 mb-1">{domainStats['Code Test']}</div>
+                <div className="text-xs text-slate-500 font-medium">Code Test</div>
               </div>
             </div>
           </div>
 
+
           {/* Right: 2×2 Stat Cards */}
           <div className="flex-1 grid grid-cols-2 gap-6">
-            <StatCard
-              title="Total Frameworks"
-              value={collections.length}
-              icon={Briefcase}
-              gradient="from-blue-500 to-indigo-600"
-            />
-            <StatCard
-              title="Active Modules"
-              value={activeJobs}
-              icon={FileText}
-              gradient="from-emerald-400 to-teal-500"
-            />
-            <StatCard
-              title="Total Candidates"
-              value={totalApplicants}
-              icon={Users}
-              gradient="from-purple-500 to-pink-500"
-            />
-            <StatCard
-              title="Completed Evals"
-              value={completedInterviews}
-              icon={Calendar}
-              gradient="from-amber-400 to-orange-500"
-            />
+            <StatCard title="Total Collections" value={collections.length} icon={Briefcase} gradient="from-blue-500 to-indigo-600" />
+            <StatCard title="Active Collections" value={activeJobs} icon={FileText} gradient="from-emerald-400 to-teal-500" />
+            <StatCard title="Total Candidates" value={totalApplicants} icon={Users} gradient="from-purple-500 to-pink-500" />
+            <StatCard title="Completed" value={completedInterviews} icon={Calendar} gradient="from-amber-400 to-orange-500" />
           </div>
         </div>
 
@@ -862,7 +838,7 @@ function AdminHome() {
               <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-500 w-5 h-5 z-10" />
               <input
                 type="text"
-                placeholder="Search frameworks, IDs, roles..."
+                placeholder="Search by company, role or ID..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="relative w-full pl-12 pr-4 py-3 bg-white/80 border border-slate-200 rounded-xl focus:border-indigo-500 text-slate-900 placeholder-gray-500 transition-all outline-none"
@@ -906,7 +882,7 @@ function AdminHome() {
           <div className="flex items-center justify-between mb-8 pb-4 border-b border-slate-200">
             <div className="flex items-center gap-3">
               <div className="w-2 h-8 bg-indigo-500 rounded-full shadow-[0_0_10px_rgba(99,102,241,0.6)]"></div>
-              <h2 className="text-2xl font-bold text-slate-900 tracking-wide">Active Collections</h2>
+              <h2 className="text-xl font-bold text-slate-900">Collections</h2>
             </div>
             <div className="bg-white/90 border border-slate-200 px-4 py-2 rounded-lg text-sm text-slate-500 font-medium">
               Showing <span className="text-slate-900">{filteredCollections.length}</span> of {collections.length} results
@@ -930,7 +906,7 @@ function AdminHome() {
                 <Briefcase className="w-10 h-10 text-slate-500" />
               </div>
               <h3 className="text-2xl font-bold text-slate-900 mb-3">No collections found</h3>
-              <p className="text-slate-500 text-lg mb-8 max-w-md mx-auto">The system couldn't locate any matching records in the database. Try adjusting your query parameters.</p>
+              <p className="text-slate-500 text-base mb-8 max-w-md mx-auto">No collections match your search. Try clearing the filters.</p>
               <button
                 onClick={() => {
                   setSearchTerm('');

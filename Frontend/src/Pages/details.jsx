@@ -289,7 +289,7 @@ function Details() {
         jobName: loginData.collection.role,
         companyName: loginData.collection.company,
         jobDescription: loginData.collection.description,
-        questionLevel: loginData.collection.level.toLowerCase()
+        questionLevel: loginData.collection.level ? loginData.collection.level.toLowerCase() : null
       };
 
       // Navigate to appropriate interview page based on domain
@@ -297,6 +297,10 @@ function Details() {
         navigate('/ComputerBased', { state: { interviewData } });
       } else if (loginData.collection.domain === 'Role Based') {
         navigate('/rolebased', { state: { interviewData } });
+      } else if (loginData.collection.domain === 'Quiz') {
+        navigate('/quiztest', { state: { interviewData } });
+      } else if (loginData.collection.domain === 'Code Test') {
+        navigate('/codeeditor', { state: { interviewData } });
       } else {
         throw new Error('Unknown interview domain');
       }
