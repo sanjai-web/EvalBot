@@ -267,7 +267,7 @@ const RoleBasedInterview = () => {
   const finalTranscriptAccumulator = useRef('');
   const interviewStartTime = useRef(Date.now());
 
-  const API_URL = 'http://localhost:5000/api';
+  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
   const GROQ_API_KEY = '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';
   const GROQ_API_URL = 'https://api.groq.com/openai/v1/chat/completions';
 
