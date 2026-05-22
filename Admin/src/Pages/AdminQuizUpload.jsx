@@ -7,7 +7,7 @@ import {
   ArrowLeft, Timer, Sparkles
 } from 'lucide-react';
 
-const API_KEY = import.meta.env.VITE_GROQ_API_KEY || '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';
+const API_KEY = import.meta.env.VITE_GROQ_API_KEY;
 const GROQ_API_URL = 'https://api.groq.com/openai/v1/chat/completions';
 
 const levelBadge = {
@@ -23,17 +23,42 @@ const emptyContainer = (id) => ({
   isGenerating: false, showManualForm: false, errors: {}
 });
 
+
+// Normalize DB data into container objects the UI expects.
+// collection.questions can be either:
+//   (a) an array of container objects (already has topic/level/id) — saved from this UI before
+//   (b) an array of raw question objects (question/options/correctAnswer) — saved by other means
+const normalizeContainers = (questions, collection) => {
+  if (!questions || questions.length === 0) return [emptyContainer(1)];
+  // If the first item looks like a container (has topic or id field), use as-is
+  if (questions[0]?.topic !== undefined || questions[0]?.id !== undefined) {
+    return questions.map((c, i) => ({
+      ...emptyContainer(c.id ?? i + 1),
+      ...c,
+      // reset runtime-only UI fields
+      isGenerating: false,
+      showManualForm: false,
+      errors: {},
+    }));
+  }
+  // Otherwise it's a flat list of raw question objects — wrap in one container
+  return [{
+    ...emptyContainer(1),
+    topic: collection?.role || 'Quiz',
+    questions: questions,
+  }];
+};
+
 export default function AdminQuizUpload() {
   const location = useLocation();
   const navigate = useNavigate();
   const collection = location.state?.collection;
 
-  const [containers, setContainers] = useState(
-    collection?.questions?.length > 0 ? collection.questions : [emptyContainer(1)]
-  );
-  const [nextId, setNextId] = useState(
-    collection?.questions?.length > 0 ? Math.max(...collection.questions.map(c => c.id || 0)) + 1 : 2
-  );
+  const [containers, setContainers] = useState(() => normalizeContainers(collection?.questions, collection));
+  const [nextId, setNextId] = useState(() => {
+    const normalized = normalizeContainers(collection?.questions, collection);
+    return Math.max(...normalized.map(c => c.id || 0)) + 1;
+  });
   const [isSaving, setIsSaving] = useState(false);
   const [showDeleteAll, setShowDeleteAll] = useState(false);
 

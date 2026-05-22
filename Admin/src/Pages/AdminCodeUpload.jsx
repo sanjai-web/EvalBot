@@ -7,7 +7,7 @@ import {
   Timer, ArrowLeft, X, Sparkles
 } from 'lucide-react';
 
-const API_KEY = import.meta.env.VITE_GROQ_API_KEY || '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';
+const API_KEY = import.meta.env.VITE_GROQ_API_KEY;
 const GROQ_API_URL = 'https://api.groq.com/openai/v1/chat/completions';
 
 const levelBadge = {

@@ -263,11 +263,22 @@ function Details() {
       const loginData = await loginResponse.json();
 
       if (!loginResponse.ok) {
+        // Handle the "already completed" case from backend
+        if (loginData.alreadyCompleted) {
+          setUserAlreadyCompleted(true);
+          setCompletionInfo({
+            score: loginData.score,
+            completedAt: loginData.completedAt,
+            interviewId: formData.interviewId.toUpperCase()
+          });
+          setIsLoading(false);
+          return;
+        }
         throw new Error(loginData.message || 'Authentication failed');
       }
 
-      // Double-check completion status from login response
-      if (loginData.user.completionStatus === 'Completed') {
+      // Double-check completion status from login response (defensive)
+      if (loginData.user && loginData.user.completionStatus === 'Completed') {
         setUserAlreadyCompleted(true);
         setCompletionInfo({
           score: loginData.user.score,

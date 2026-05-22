@@ -702,6 +702,16 @@ app.post('/api/auth/login', async (req, res) => {
       return res.status(403).json({ message: 'Your account has been blocked' });
     }
 
+    // Check if user has already completed the test
+    if (user.completionStatus === 'Completed') {
+      return res.status(403).json({ 
+        message: 'You have already completed this evaluation. Only one attempt is permitted per candidate.',
+        alreadyCompleted: true,
+        completedAt: user.completedAt,
+        score: user.score
+      });
+    }
+
     // Get collection details
     const collection = await Collection.findOne({ interviewId: user.interviewId });
 

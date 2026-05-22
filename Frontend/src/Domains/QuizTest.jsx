@@ -149,7 +149,7 @@ const QuizTest = () => {
   const [currentSection, setCurrentSection] = useState(0);
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [answers, setAnswers] = useState({});
-  const [timeLeft, setTimeLeft] = useState(3600); // 60 minutes in seconds
+  const [timeLeft, setTimeLeft] = useState((interviewData?.collection?.timeLimit || 60) * 60);
   const [flaggedQuestions, setFlaggedQuestions] = useState([]);
   const [showSubmitConfirm, setShowSubmitConfirm] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -270,24 +270,77 @@ const QuizTest = () => {
     }
   };
 
+  const [isSubmittingToDb, setIsSubmittingToDb] = useState(false);
+
   // Handle submit
   const handleSubmit = () => {
     setShowSubmitConfirm(true);
   };
 
-  // Confirm submit
-  const confirmSubmit = () => {
-    // Calculate score
-    let score = 0;
-    let totalCorrect = 0;
-    
-    // In a real app, this would be sent to backend
-    console.log('Submitted answers:', answers);
-    console.log('Flagged questions:', flaggedQuestions);
-    
-    // Navigate to results page or back
-    alert('Quiz submitted successfully!');
-    navigate('/');
+  // Confirm submit — saves results to database
+  const confirmSubmit = async () => {
+    setIsSubmittingToDb(true);
+
+    // Build per-question answer detail
+    const allQuestions = quizData.sections.flatMap(s => s.questions);
+    const quizAnswers = allQuestions.map(q => {
+      const userAnswer = answers[q.id] || null;
+      const isCorrect = userAnswer === q.correctAnswer;
+      return {
+        questionId: String(q.id),
+        question: q.question,
+        userAnswer: userAnswer,
+        correctAnswer: q.correctAnswer,
+        isCorrect,
+        category: q.section || 'General',
+        difficulty: 'Medium',
+        score: isCorrect ? Math.round(100 / allQuestions.length) : 0
+      };
+    });
+
+    const correctCount = quizAnswers.filter(a => a.isCorrect).length;
+    const overallScore = Math.round((correctCount / allQuestions.length) * 100);
+    const timeSpent = (interviewData?.collection?.timeLimit || 60) * 60 - timeLeft;
+
+    const payload = {
+      interviewId: interviewData?.collection?.interviewId || `quiz-${Date.now()}`,
+      userId: interviewData?.user?.id || interviewData?.user?._id || '000000000000000000000000',
+      userName: interviewData?.user?.name || 'Candidate',
+      userEmail: interviewData?.user?.loginId || 'candidate@example.com',
+      company: interviewData?.collection?.company || 'Company',
+      role: interviewData?.collection?.role || 'Role',
+      domain: 'Quiz',
+      timeLimit: interviewData?.collection?.timeLimit || 60,
+      quizAnswers,
+      overallScore,
+      totalQuestions: allQuestions.length,
+      completedQuestions: Object.keys(answers).length,
+      timeSpent,
+      status: 'Completed'
+    };
+
+    try {
+      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+      const res = await fetch(`${API_URL}/test/results`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.message || `HTTP ${res.status}`);
+      }
+
+      console.log('✅ Quiz results saved successfully');
+      alert(`Quiz submitted! You scored ${overallScore}% (${correctCount}/${allQuestions.length} correct).`);
+    } catch (err) {
+      console.error('❌ Failed to save quiz results:', err);
+      alert(`Quiz submitted, but results could not be saved: ${err.message}`);
+    } finally {
+      setIsSubmittingToDb(false);
+      navigate('/');
+    }
   };
 
   // Get current question
@@ -667,10 +720,24 @@ const QuizTest = () => {
                 </button>
                 <button
                   onClick={confirmSubmit}
-                  className="flex-1 px-4 py-3 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-bold uppercase tracking-wider text-sm transition-colors flex items-center justify-center space-x-2 shadow-[0_0_20px_rgba(16,185,129,0.4)]"
+                  disabled={isSubmittingToDb}
+                  className={`flex-1 px-4 py-3 text-white rounded-xl font-bold uppercase tracking-wider text-sm transition-colors flex items-center justify-center space-x-2 ${
+                    isSubmittingToDb
+                      ? 'bg-emerald-700 cursor-not-allowed opacity-70'
+                      : 'bg-emerald-600 hover:bg-emerald-500 shadow-[0_0_20px_rgba(16,185,129,0.4)]'
+                  }`}
                 >
-                  <FaCheck className="w-5 h-5" />
-                  <span>Submit Quiz</span>
+                  {isSubmittingToDb ? (
+                    <>
+                      <svg className="animate-spin w-5 h-5" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg>
+                      <span>Saving...</span>
+                    </>
+                  ) : (
+                    <>
+                      <FaCheck className="w-5 h-5" />
+                      <span>Submit Quiz</span>
+                    </>
+                  )}
                 </button>
               </div>
             </div>

@@ -495,7 +495,7 @@ const Interview = () => {
   const finalTranscriptAccumulator = useRef('');
 
   const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
-  const GROQ_API_KEY = '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';
+  const GROQ_API_KEY = import.meta.env.VITE_GROQ_API_KEY;
   const GROQ_API_URL = 'https://api.groq.com/openai/v1/chat/completions';
 
   // User info state
@@ -793,7 +793,7 @@ IMPORTANT:
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${typeof GROQ_API_KEY !== 'undefined' ? GROQ_API_KEY : API_KEY}`
+          'Authorization': `Bearer ${GROQ_API_KEY}`
         },
         body: JSON.stringify({
           model: "llama-3.1-8b-instant",
@@ -968,7 +968,7 @@ Keep it constructive, professional, and encouraging.`;
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${typeof GROQ_API_KEY !== 'undefined' ? GROQ_API_KEY : API_KEY}`
+          'Authorization': `Bearer ${GROQ_API_KEY}`
         },
         body: JSON.stringify({
           model: "llama-3.1-8b-instant",
@@ -1075,7 +1075,7 @@ Output:`;
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${typeof GROQ_API_KEY !== 'undefined' ? GROQ_API_KEY : API_KEY}`
+          'Authorization': `Bearer ${GROQ_API_KEY}`
         },
         body: JSON.stringify({
           model: "llama-3.1-8b-instant",
@@ -1614,12 +1614,11 @@ Output:`;
       const saveResponse = await fetch(`${API_URL}/interview/results`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${typeof GROQ_API_KEY !== 'undefined' ? GROQ_API_KEY : API_KEY}`
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify({
           interviewId: interviewData.collection.interviewId,
-          userId: interviewData.user.id,
+          userId: interviewData.user.id || interviewData.user._id,
           userName: interviewData.user.name,
           userEmail: interviewData.user.loginId,
           company: interviewData.collection.company,
@@ -1636,7 +1635,8 @@ Output:`;
       });
 
       if (!saveResponse.ok) {
-        throw new Error('Failed to save interview results');
+        const errData = await saveResponse.json().catch(() => ({}));
+        throw new Error(errData.message || 'Failed to save interview results');
       }
 
       console.log('✅ Interview results saved successfully');
