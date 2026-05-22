@@ -393,7 +393,7 @@ app.post('/api/collections', async (req, res) => {
       const [datePart, timePart] = dateTimeStr.split(' ');
       const [day, month, year] = datePart.split('-');
       const [hours, minutes] = timePart.split(':');
-      return new Date(`${year}-${month}-${day}T${hours}:${minutes}`);
+      return new Date(`${year}-${month}-${day}T${hours}:${minutes}:00+05:30`);
     };
 
     const start = parseCustomDateTime(startDateTime);
@@ -461,7 +461,7 @@ app.put('/api/collections/:id', async (req, res) => {
         const [datePart, timePart] = dateTimeStr.split(' ');
         const [day, month, year] = datePart.split('-');
         const [hours, minutes] = timePart.split(':');
-        return new Date(`${year}-${month}-${day}T${hours}:${minutes}`);
+        return new Date(`${year}-${month}-${day}T${hours}:${minutes}:00+05:30`);
       };
 
       const start = parseCustomDateTime(startDateTime);
@@ -711,25 +711,60 @@ app.post('/api/auth/login', async (req, res) => {
 
     // Check if interview is within scheduled time
     const parseCustomDateTime = (dateTimeStr) => {
-      const [datePart, timePart] = dateTimeStr.split(' ');
-      const [day, month, year] = datePart.split('-');
+      if (!dateTimeStr) return null;
+      const parts = dateTimeStr.split(' ');
+      const datePart = parts[0];
+      const timePart = parts[1] || '00:00';
+      const dateSections = datePart.split('-');
       const [hours, minutes] = timePart.split(':');
-      return new Date(`${year}-${month}-${day}T${hours}:${minutes}`);
+
+      let day, month, year;
+      if (dateSections[0].length === 4) {
+        // YYYY-MM-DD format
+        [year, month, day] = dateSections;
+      } else {
+        // DD-MM-YYYY format
+        [day, month, year] = dateSections;
+      }
+
+      const parsed = new Date(`${year}-${month}-${day}T${hours}:${minutes}:00+05:30`);
+      return parsed;
     };
 
     const now = new Date();
     const start = parseCustomDateTime(collection.startDateTime);
     const end = parseCustomDateTime(collection.endDateTime);
 
+    // Debug log to diagnose time issues
+    console.log(`🕐 Time Check for ${user.loginId}:`);
+    console.log(`   Now (UTC):   ${now.toISOString()}`);
+    console.log(`   Start (UTC): ${start ? start.toISOString() : 'INVALID - raw: ' + collection.startDateTime}`);
+    console.log(`   End (UTC):   ${end ? end.toISOString() : 'INVALID - raw: ' + collection.endDateTime}`);
+
+    if (!start || isNaN(start.getTime())) {
+      console.error(`❌ Invalid startDateTime format: "${collection.startDateTime}"`);
+      return res.status(500).json({ message: 'Interview schedule is misconfigured. Please contact admin.' });
+    }
+
+    if (!end || isNaN(end.getTime())) {
+      console.error(`❌ Invalid endDateTime format: "${collection.endDateTime}"`);
+      return res.status(500).json({ message: 'Interview schedule is misconfigured. Please contact admin.' });
+    }
+
     if (now < start) {
+      // Format current time in IST for user clarity
+      const nowIST = new Date(now.getTime() + 5.5 * 60 * 60 * 1000);
+      const istStr = nowIST.toISOString().replace('T', ' ').substring(0, 16) + ' IST';
       return res.status(403).json({ 
-        message: `Interview has not started yet. It will begin on ${collection.startDateTime}` 
+        message: `Interview has not started yet. It will begin on ${collection.startDateTime} (IST). Current server time: ${istStr}` 
       });
     }
 
-    if (now > end) {
+    // Add a 5-minute grace period at the end so users can log in near the deadline
+    const endWithGrace = new Date(end.getTime() + 5 * 60 * 1000);
+    if (now > endWithGrace) {
       return res.status(403).json({ 
-        message: `Interview has ended. It was scheduled until ${collection.endDateTime}` 
+        message: `Interview has ended. It was scheduled until ${collection.endDateTime} (IST)` 
       });
     }
 
