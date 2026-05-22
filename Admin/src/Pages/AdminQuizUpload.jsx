@@ -90,6 +90,13 @@ export default function AdminQuizUpload() {
     const c = containers.find(x => x.id === id);
     const errors = validate(c);
     if (Object.keys(errors).length) { update(id, { errors }); return; }
+
+    // Guard: check API key before making the request
+    if (!API_KEY || API_KEY === 'undefined') {
+      alert('AI generation is not configured. VITE_GROQ_API_KEY is missing from your .env file.\n\nRestart the dev server after adding the key.');
+      return;
+    }
+
     update(id, { isGenerating: true, errors: {} });
     try {
       const res = await fetch(GROQ_API_URL, {
@@ -99,16 +106,25 @@ export default function AdminQuizUpload() {
           model: 'llama-3.1-8b-instant',
           messages: [{ role: 'user', content:
             `Generate ${c.numQuestions} multiple choice questions on "${c.topic}" at ${c.level} level.
-Return only a JSON array: [{"question":"...","options":["A","B","C","D"],"correctAnswer":"A"}]` }]
+Return ONLY a valid JSON array (no explanation, no markdown):
+[{"question":"...","options":["A","B","C","D"],"correctAnswer":"A"}]` }],
+          temperature: 0.7,
+          max_tokens: 2048
         })
       });
       const data = await res.json();
-      const match = data.choices[0].message.content.match(/\[\s*\{[\s\S]*\}\s*\]/);
-      if (!match) throw new Error('parse error');
+      if (!res.ok) {
+        console.error('Groq API error:', data);
+        throw new Error(data.error?.message || `Groq API error ${res.status}`);
+      }
+      const content = data.choices?.[0]?.message?.content || '';
+      const match = content.match(/\[\s*\{[\s\S]*\}\s*\]/);
+      if (!match) throw new Error('Could not parse AI response. Try again.');
       const questions = JSON.parse(match[0]).slice(0, c.numQuestions);
       update(id, { questions, isGenerating: false });
-    } catch {
-      alert('Failed to generate questions. Please try again.');
+    } catch(err) {
+      console.error('Question generation failed:', err);
+      alert(`Failed to generate questions: ${err.message}`);
       update(id, { isGenerating: false });
     }
   };

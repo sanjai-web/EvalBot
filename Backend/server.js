@@ -163,8 +163,7 @@ const interviewResultSchema = new mongoose.Schema({
     index: true
   },
   userId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
+    type: mongoose.Schema.Types.Mixed,  // Accept both ObjectId string and ObjectId
     required: true
   },
   userName: {
@@ -232,8 +231,7 @@ const testResultSchema = new mongoose.Schema({
     index: true
   },
   userId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
+    type: mongoose.Schema.Types.Mixed,  // Accept both ObjectId string and ObjectId
     required: true
   },
   userName: {
@@ -557,12 +555,51 @@ app.get('/api/collections/:id/users', async (req, res) => {
     }
 
     const users = await User.find({ interviewId: collection.interviewId }).sort({ createdAt: -1 });
-    res.json(users);
+
+    // Enrich users with actual scores from TestResult or InterviewResult
+    const enrichedUsers = await Promise.all(users.map(async (user) => {
+      const userObj = user.toObject();
+
+      try {
+        // Look up the most recent result for this user by email + interviewId
+        const query = {
+          interviewId: collection.interviewId,
+          userEmail: user.loginId
+        };
+
+        // Check TestResult first (Quiz / Code Test)
+        const testResult = await TestResult.findOne(query).sort({ startedAt: -1 });
+        // Check InterviewResult (Computer Science / Role Based)
+        const interviewResult = await InterviewResult.findOne(query).sort({ startedAt: -1 });
+
+        // Pick the result with the highest score
+        let actualScore = userObj.score;
+        if (testResult && testResult.overallScore > actualScore) {
+          actualScore = testResult.overallScore;
+        }
+        if (interviewResult && interviewResult.overallScore > actualScore) {
+          actualScore = interviewResult.overallScore;
+        }
+
+        // If the stored User.score differs, sync it silently
+        if (actualScore !== userObj.score) {
+          await User.findByIdAndUpdate(user._id, { score: actualScore });
+          userObj.score = actualScore;
+        }
+      } catch (enrichErr) {
+        console.warn(`⚠️ Could not enrich score for user ${user.loginId}:`, enrichErr.message);
+      }
+
+      return userObj;
+    }));
+
+    res.json(enrichedUsers);
   } catch (error) {
     console.error('Error fetching users:', error);
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 });
+
 
 // Add new user to a collection
 app.post('/api/collections/:id/users', async (req, res) => {
@@ -862,13 +899,34 @@ app.post('/api/interview/results', async (req, res) => {
     });
 
     await interviewResult.save();
+    console.log(`✅ InterviewResult saved: ${interviewResult._id}`);
 
-    // Update user's score and completion status in the User collection
-    await User.findByIdAndUpdate(userId, {
-      score: calculatedScore,
-      completionStatus: 'Completed',
-      completedAt: new Date()
-    });
+    // Update user's score and completion status — try by ObjectId first, then by email+interviewId
+    let userObjectId = null;
+    try { userObjectId = new mongoose.Types.ObjectId(userId); } catch(e) { /* invalid ObjectId */ }
+
+    let userUpdateResult = null;
+    if (userObjectId) {
+      userUpdateResult = await User.findByIdAndUpdate(userObjectId, {
+        score: calculatedScore,
+        completionStatus: 'Completed',
+        completedAt: new Date()
+      }, { new: true });
+    }
+
+    if (!userUpdateResult) {
+      userUpdateResult = await User.findOneAndUpdate(
+        { interviewId: interviewId.toUpperCase(), loginId: userEmail.toLowerCase() },
+        { score: calculatedScore, completionStatus: 'Completed', completedAt: new Date() },
+        { new: true }
+      );
+    }
+
+    if (userUpdateResult) {
+      console.log(`✅ User marked Completed: ${userUpdateResult.name} (score: ${calculatedScore}%)`);
+    } else {
+      console.error(`❌ CRITICAL: Could not find user to update! interviewId=${interviewId}, email=${userEmail}`);
+    }
 
     // Update completed applicants count in collection
     const collection = await Collection.findOne({ interviewId });
@@ -941,14 +999,29 @@ app.post('/api/test/results', async (req, res) => {
       status
     } = req.body;
 
+    console.log(`📝 Saving ${domain} results for user: ${userName} (${userEmail}), interviewId: ${interviewId}, userId: ${userId}`);
+
     // Validate domain
     if (domain !== 'Quiz' && domain !== 'Code Test') {
       return res.status(400).json({ message: 'Invalid domain for test results' });
     }
 
+    // Validate required fields
+    if (!interviewId || !userName || !userEmail) {
+      return res.status(400).json({ message: 'Missing required fields: interviewId, userName, userEmail' });
+    }
+
+    // Convert userId to ObjectId if it's a valid string
+    let userObjectId = null;
+    try {
+      userObjectId = new mongoose.Types.ObjectId(userId);
+    } catch (e) {
+      console.warn(`⚠️ Could not convert userId "${userId}" to ObjectId:`, e.message);
+    }
+
     const testResult = new TestResult({
       interviewId,
-      userId,
+      userId: userObjectId || userId,
       userName,
       userEmail,
       company,
@@ -956,9 +1029,9 @@ app.post('/api/test/results', async (req, res) => {
       domain,
       timeLimit,
       testData,
-      quizAnswers: domain === 'Quiz' ? quizAnswers : [],
-      codeSolutions: domain === 'Code Test' ? codeSolutions : [],
-      overallScore,
+      quizAnswers: domain === 'Quiz' ? (quizAnswers || []) : [],
+      codeSolutions: domain === 'Code Test' ? (codeSolutions || []) : [],
+      overallScore: overallScore || 0,
       totalQuestions,
       completedQuestions,
       timeSpent,
@@ -966,16 +1039,40 @@ app.post('/api/test/results', async (req, res) => {
     });
 
     await testResult.save();
+    console.log(`✅ TestResult saved: ${testResult._id}`);
 
-    // Update user's score and completion status in the User collection
-    await User.findByIdAndUpdate(userId, {
-      score: overallScore || 0,
-      completionStatus: 'Completed',
-      completedAt: new Date()
-    });
+    // Update user's score and completion status — try by ObjectId first, then by email+interviewId
+    let userUpdateResult = null;
+    if (userObjectId) {
+      userUpdateResult = await User.findByIdAndUpdate(userObjectId, {
+        score: overallScore || 0,
+        completionStatus: 'Completed',
+        completedAt: new Date()
+      }, { new: true });
+    }
+
+    // Fallback: find by interviewId + loginId (email) if ObjectId update failed
+    if (!userUpdateResult) {
+      console.warn(`⚠️ findByIdAndUpdate returned null for userId: ${userId}. Trying fallback by email+interviewId...`);
+      userUpdateResult = await User.findOneAndUpdate(
+        { interviewId: interviewId.toUpperCase(), loginId: userEmail.toLowerCase() },
+        {
+          score: overallScore || 0,
+          completionStatus: 'Completed',
+          completedAt: new Date()
+        },
+        { new: true }
+      );
+    }
+
+    if (userUpdateResult) {
+      console.log(`✅ User completion status updated: ${userUpdateResult.name} → Completed (score: ${overallScore}%)`);
+    } else {
+      console.error(`❌ CRITICAL: Could not find user to update completion status! interviewId=${interviewId}, email=${userEmail}, userId=${userId}`);
+    }
 
     // Update completed applicants count in collection
-    const collection = await Collection.findOne({ interviewId });
+    const collection = await Collection.findOne({ interviewId: interviewId.toUpperCase() });
     if (collection) {
       const completedCount = await User.countDocuments({ 
         interviewId: collection.interviewId, 
@@ -983,14 +1080,18 @@ app.post('/api/test/results', async (req, res) => {
       });
       collection.completedApplicants = completedCount;
       await collection.save();
+      console.log(`✅ Collection completedApplicants updated: ${completedCount}`);
+    } else {
+      console.warn(`⚠️ Could not find collection with interviewId: ${interviewId}`);
     }
 
     res.status(201).json({
       message: 'Test results saved successfully',
-      result: testResult
+      result: testResult,
+      userUpdated: !!userUpdateResult
     });
   } catch (error) {
-    console.error('Error saving test results:', error);
+    console.error('❌ Error saving test results:', error);
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 });

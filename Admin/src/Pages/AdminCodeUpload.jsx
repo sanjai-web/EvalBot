@@ -210,6 +210,14 @@ export default function AdminCodeUpload() {
 
   const handleGenerate = async () => {
     if (!topic.trim()) { setError('Please enter a topic'); return; }
+
+    // Guard: check API key before making the request
+    if (!API_KEY || API_KEY === 'undefined') {
+      setError('VITE_GROQ_API_KEY is missing from your .env file. Restart the dev server after adding the key.');
+      setShowModal(false);
+      return;
+    }
+
     setIsGenerating(currentIdx);
     setShowModal(false);
     try {
@@ -224,13 +232,20 @@ export default function AdminCodeUpload() {
 3. Sample output (as a string)
 4. 5 different test cases (inputs and outputs must be strings)
 
-Return only JSON:
-{"question":"...","sampleInput":"...","sampleOutput":"...","testCases":[{"input":"...","output":"..."},{"input":"...","output":"..."},{"input":"...","output":"..."},{"input":"...","output":"..."},{"input":"...","output":"..."}]}` }]
+Return ONLY valid JSON (no markdown, no explanation):
+{"question":"...","sampleInput":"...","sampleOutput":"...","testCases":[{"input":"...","output":"..."},{"input":"...","output":"..."},{"input":"...","output":"..."},{"input":"...","output":"..."},{"input":"...","output":"..."}]}` }],
+          temperature: 0.7,
+          max_tokens: 1024
         })
       });
       const data = await res.json();
-      const match = data.choices[0].message.content.match(/\{[\s\S]*\}/);
-      if (!match) throw new Error('Parse error');
+      if (!res.ok) {
+        console.error('Groq API error:', data);
+        throw new Error(data.error?.message || `Groq API error ${res.status}`);
+      }
+      const content = data.choices?.[0]?.message?.content || '';
+      const match = content.match(/\{[\s\S]*\}/);
+      if (!match) throw new Error('Could not parse AI response. Try again.');
       const gen = JSON.parse(match[0]);
       
       const ensureString = (val) => typeof val === 'object' && val !== null ? JSON.stringify(val) : String(val || '');

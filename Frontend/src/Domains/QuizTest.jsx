@@ -321,25 +321,33 @@ const QuizTest = () => {
 
     try {
       const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+      console.log('📤 Sending quiz results payload:', JSON.stringify(payload, null, 2));
+      
       const res = await fetch(`${API_URL}/test/results`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
       });
 
+      const responseData = await res.json();
+      
       if (!res.ok) {
-        const err = await res.json();
-        throw new Error(err.message || `HTTP ${res.status}`);
+        console.error('❌ Backend error response:', responseData);
+        throw new Error(responseData.message || `Server error (HTTP ${res.status})`);
       }
 
-      console.log('✅ Quiz results saved successfully');
-      alert(`Quiz submitted! You scored ${overallScore}% (${correctCount}/${allQuestions.length} correct).`);
+      console.log('✅ Quiz results saved successfully. userUpdated:', responseData.userUpdated);
+      if (!responseData.userUpdated) {
+        console.warn('⚠️ Results saved but user completion status may not have been updated.');
+      }
+      alert(`Quiz submitted Successfully`);
+      navigate('/');
     } catch (err) {
       console.error('❌ Failed to save quiz results:', err);
-      alert(`Quiz submitted, but results could not be saved: ${err.message}`);
+      alert(`Your quiz was submitted but results could not be saved to the server: ${err.message}\n\nPlease contact your administrator.`);
+      navigate('/');
     } finally {
       setIsSubmittingToDb(false);
-      navigate('/');
     }
   };
 

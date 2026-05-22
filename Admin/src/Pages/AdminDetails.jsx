@@ -430,11 +430,26 @@ function AdminDetails() {
     }
   };
 
-  const handleUploadQuestions = () => {
-    if (editedCollection.domain === "Code Test") {
-      navigate("/CodeUpload", { state: { collection: editedCollection } });
-    } else if (editedCollection.domain === "Quiz") {
-      navigate("/QuizUpload", { state: { collection: editedCollection } });
+  const handleUploadQuestions = async () => {
+    try {
+      // Always fetch the latest collection from the backend so questions are up-to-date
+      const response = await fetch(`${API_URL}/collections/${collection._id}`);
+      if (!response.ok) throw new Error('Failed to fetch latest collection data');
+      const latestCollection = await response.json();
+
+      if (latestCollection.domain === "Code Test") {
+        navigate("/CodeUpload", { state: { collection: latestCollection } });
+      } else if (latestCollection.domain === "Quiz") {
+        navigate("/QuizUpload", { state: { collection: latestCollection } });
+      }
+    } catch (err) {
+      console.error('Error fetching collection before navigation:', err);
+      // Fallback: navigate with current state if fetch fails
+      if (editedCollection.domain === "Code Test") {
+        navigate("/CodeUpload", { state: { collection: editedCollection } });
+      } else if (editedCollection.domain === "Quiz") {
+        navigate("/QuizUpload", { state: { collection: editedCollection } });
+      }
     }
   };
 

@@ -170,7 +170,7 @@ function buildSummary(results, passed, total) {
     lines.push(`[${icon}] Test Case ${r.index}`);
     if (!r.passed) {
       lines.push(`    Input:    ${r.input.replace(/\n/g, "↵")}`);
-      lines.push(`    Expected: ${r.expected}`);
+      // lines.push(`    Expected: ${r.expected}`);
       lines.push(`    Got:      ${r.actual || "(no output)"}`);
       if (r.stderr) lines.push(`    Error:    ${r.stderr}`);
     }
@@ -349,13 +349,17 @@ export default function CodeEditor() {
   }, [isSubmitting, language, code, question]);
 
   const handleFinishAssessment = async () => {
-    // Record current solution
+    // Record current solution with PARTIAL credit (proportional to test cases passed)
+    const partialScore = totalTests > 0 ? Math.round((passedTests / totalTests) * 100) : 0;
     const currentSolution = {
       questionId: question.title,
       code: code,
       language: language,
-      passed: passedTests === totalTests,
-      score: passedTests === totalTests ? 100 : 0
+      passedTests: passedTests,
+      totalTests: totalTests,
+      passed: passedTests > 0,         // passed = at least 1 test case
+      allPassed: passedTests === totalTests,
+      score: partialScore              // partial credit score
     };
 
     if (currentQuestion < questionsList.length - 1) {
@@ -366,13 +370,17 @@ export default function CodeEditor() {
       setCurrentQuestion((p) => p + 1);
       setCode(initialTemplates[language]);
     } else {
-      // Final submission
+      // Final submission — save all solutions
       try {
         const finalSolutions = [...codeSolutions, currentSolution];
+        // Overall score = average of individual question partial scores
         const totalScore = finalSolutions.reduce((sum, sol) => sum + sol.score, 0);
         const overallScore = Math.round(totalScore / questionsList.length);
-        const completed = finalSolutions.filter(s => s.passed).length;
+        const totalPassedTests = finalSolutions.reduce((sum, sol) => sum + (sol.passedTests || 0), 0);
+        const totalTestCases = finalSolutions.reduce((sum, sol) => sum + (sol.totalTests || 0), 0);
         
+        console.log(`📊 Final Score: ${overallScore}% (${totalPassedTests}/${totalTestCases} test cases passed)`);
+
         const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/test/results`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -388,21 +396,23 @@ export default function CodeEditor() {
             codeSolutions: finalSolutions,
             overallScore: overallScore,
             totalQuestions: questionsList.length,
-            completedQuestions: completed,
+            completedQuestions: finalSolutions.filter(s => s.passedTests > 0).length,
             timeSpent: 3600 - timeRemaining,
             status: 'Completed'
           })
         });
 
+        const responseData = await res.json();
         if (!res.ok) {
-          const errorData = await res.json();
-          throw new Error(errorData.message || `HTTP status ${res.status}`);
+          console.error('❌ Backend error:', responseData);
+          throw new Error(responseData.message || `HTTP status ${res.status}`);
         }
-        alert("Assessment Completed! Your results have been saved successfully.");
+        console.log('✅ Code test results saved. userUpdated:', responseData.userUpdated, 'Score:', overallScore);
+        alert(`Assessment Completed!\nYour score: ${overallScore}% (${totalPassedTests}/${totalTestCases} test cases passed)`);
         navigate("/");
       } catch (err) {
         console.error("Failed to save test results", err);
-        alert("Assessment Completed, but we couldn't save your results to the database.");
+        alert(`Assessment Completed, but results could not be saved: ${err.message}`);
         navigate("/");
       }
     }
@@ -728,8 +738,11 @@ export default function CodeEditor() {
                 </svg>
               </div>
               <h3 className="text-2xl font-bold text-white mb-3 tracking-wide">Solution Accepted!</h3>
-              <p className="text-slate-400 mb-8 text-sm">
+              <p className="text-slate-400 mb-2 text-sm">
                 All <strong className="text-emerald-400">{totalTests}</strong> test cases passed. Fantastic work!
+              </p>
+              <p className="text-indigo-300 text-sm font-semibold mb-8">
+                Score for this question: <span className="text-white">100%</span>
               </p>
               <button
                 onClick={handleFinishAssessment}
